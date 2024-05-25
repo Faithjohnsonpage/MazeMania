@@ -1,6 +1,6 @@
 #include "../headers/mazemania.h"
 
-void handleEvent(SDL_Event *event, SDL_Rect *object, int speed);
+void handleEvent(SDL_Event *event, SDL_Rect *object, Texture *texture, int speed, double *degrees);
 
 int worldMap[mapHeight][mapWidth] = {
 	{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
@@ -49,6 +49,13 @@ int init_instance(SDL_Instance *instance)
 	if (instance->renderer == NULL)
 	{
 		fprintf(stderr, "SDL_CreateRenderer Error: %s\n", SDL_GetError());
+		return (1);
+	}
+
+	if (!(IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG))
+	{
+		printf("SDL_image could not initialize! SDL_image Error: %s\n",
+				IMG_GetError());
 		return (1);
 	}
 
@@ -101,19 +108,17 @@ void render_world(SDL_Instance *instance, SDL_Rect *rect)
 }
 
 /**
- * handleEvent - Handles SDL events for object movement.
+ * handleEvent - Handles SDL events for object movement and rotation.
  * @event: Pointer to the SDL_Event structure containing event data.
- * @object: Pointer to the SDL_Rect structure representing the object to move.
+ * @object: Pointer to the SDL_Rect structure representing object's position.
+ * @texture: Pointer to the Texture structure representing object's texture.
  * @speed: Speed at which the object moves.
- *
- * This function handles SDL events such as key presses to move the object on
- * the screen. It updates the position of the object based on the event and the
- * specified speed.
+ * @degrees: Pointer to the angle in degrees to rotate the object.
  */
 
-void handleEvent(SDL_Event *event, SDL_Rect *object, int speed)
+void handleEvent(SDL_Event *event, SDL_Rect *object, Texture *texture,
+		int speed, double *degrees)
 {
-	int y, x;
 	SDL_Rect prevPosition = *object;
 
 	/* Handle keyboard input for movement */
@@ -133,30 +138,36 @@ void handleEvent(SDL_Event *event, SDL_Rect *object, int speed)
 			case SDLK_RIGHT:
 				object->x += speed;
 				break;
+			case SDLK_a:
+				*degrees -= 15;
+				break;
+			case SDLK_d:
+				*degrees += 15;
+				break;
 		}
 	}
 
 	if (object->x < 60)
 		object->x = 60;
 
-	if ((object->x + object->w) > SCREEN_WIDTH - 60)
-		object->x = SCREEN_WIDTH - 65;
+	if ((object->x + texture->width) > SCREEN_WIDTH - 60)
+		object->x = SCREEN_WIDTH - 60 - texture->width;
 
 	if (object->y < 60)
 		object->y = 60;
 
-	if ((object->y + object->h) > SCREEN_HEIGHT - 60)
-		object->y = SCREEN_HEIGHT - 65;
+	if ((object->y + texture->height) > SCREEN_HEIGHT - 60)
+		object->y = SCREEN_HEIGHT - 60 - texture->height;
 
 	/* Check for collision with internal walls */
-	for (y = 0; y < mapHeight; y++)
+	for (int y = 0; y < mapHeight; y++)
 	{
-		for (x = 0; x < mapWidth; x++)
+		for (int x = 0; x < mapWidth; x++)
 		{
 			if (worldMap[y][x] == 2)
 			{
 				SDL_Rect wallRect = {x * TILE_SIZE, y * TILE_SIZE,
-									 TILE_SIZE, TILE_SIZE};
+					TILE_SIZE, TILE_SIZE};
 
 				if (checkIntersection(object, &wallRect))
 				{
@@ -189,10 +200,10 @@ void cleanup(SDL_Instance *instance)
 	SDL_Quit();
 }
 
-
 /**
- * main - Entry point of the program. Initializes SDL, runs the event loop,
- * and cleans up.
+ * main - Entry point of the program.
+ * Initializes SDL, manages the game loop,
+ * handles events, updates the game state, and cleans up resources.
  *
  * Return: 0 on success, 1 on failure.
  */
@@ -206,9 +217,23 @@ int main(void)
 
 	SDL_Event event;
 	SDL_Rect rect;
-	SDL_Rect object = {60, 60, 5, 5};
+	SDL_Rect object = {60, 60, 0, 0};
 	int running = 1;
 	int speed = 5;
+	double degrees = 0;
+	Texture objectTexture;
+
+	initTexture(&objectTexture);
+
+	if (loadTexture(instance.renderer,
+				"../images/dot.bmp", &objectTexture) != 0)
+	{
+		return (1);
+	}
+
+	/* Update the object rectangle with the texture's dimensions */
+	object.w = objectTexture.width;
+	object.h = objectTexture.height;
 
 	while (running)
 	{
@@ -219,7 +244,7 @@ int main(void)
 				running = 0;
 			}
 
-			handleEvent(&event, &object, speed);
+			handleEvent(&event, &object, &objectTexture, speed, &degrees);
 		}
 
 		/* Clear the window with a grey color */
@@ -228,11 +253,9 @@ int main(void)
 
 		render_world(&instance, &rect);
 
-		/* Set the color for the moving object (red) */
-		SDL_SetRenderDrawColor(instance.renderer, 255, 0, 0, 255);
-
-		/* Render the moving object */
-		SDL_RenderFillRect(instance.renderer, &object);
+		/* Render the moving object with rotation */
+		SDL_RenderCopyEx(instance.renderer, objectTexture.texture, NULL,
+				&object, degrees, NULL, SDL_FLIP_NONE);
 
 		/* Present the renderer */
 		SDL_RenderPresent(instance.renderer);
@@ -241,6 +264,7 @@ int main(void)
 		SDL_Delay(16); /* Roughly 60 frames per second */
 	}
 
+	freeTexture(&objectTexture);
 	cleanup(&instance);
 
 	return (0);
