@@ -12,9 +12,12 @@
 #define TILE_SIZE 60
 #define SCREEN_WIDTH 1260
 #define SCREEN_HEIGHT 720
+#define NUM_RAYS 300
 #define FOV_ANGLE 60
-#define PROJECTION_PLANE_WIDTH 320
+#define DEG_TO_RAD(angle) ((angle) * M_PI / 180.0)
 #define PROJECTION_PLANE_HEIGHT 200
+
+extern int worldMap[mapHeight][mapWidth];
 
 /**
  * struct SDL_Instance - SDL window and renderer structure.
@@ -56,8 +59,11 @@ int loadTexture(SDL_Renderer *renderer, const char *path, Texture *texture);
 void cleanup(SDL_Instance *instance);
 int checkIntersection(const SDL_Rect *A, const SDL_Rect *B);
 void render_world(SDL_Instance *instance, SDL_Rect *rect);
-void handleEvent(SDL_Event *event, SDL_Rect *object, Texture *texture,
-		int speed, double *degrees);
+void handleEvent(SDL_Event *event, SDL_Rect *object, Texture *texture, int speed, double *degrees);
 void rotateLogic(int *objX, int *objY, int *objW, int *objH, double degrees);
+int truncateDivisionFloat(float value, float divisor);
+void castRays(SDL_Instance *instance, float playerX, float playerY, float playerRotation);
+float castSingleRay(float playerX, float playerY, float rayAngle);
+void drawRay(SDL_Renderer *renderer, float playerX, float playerY, float rayAngle, float rayDistance);
 
 #endif /* MAZEMANIA_H_ */
