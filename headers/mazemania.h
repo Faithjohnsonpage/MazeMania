@@ -15,7 +15,6 @@
 #define NUM_RAYS 300
 #define FOV_ANGLE 60
 #define DEG_TO_RAD(angle) ((angle) * M_PI / 180.0)
-#define PROJECTION_PLANE_HEIGHT 200
 
 extern int worldMap[mapHeight][mapWidth];
 
@@ -59,8 +58,7 @@ int loadTexture(SDL_Renderer *renderer, const char *path, Texture *texture);
 void cleanup(SDL_Instance *instance);
 int checkIntersection(const SDL_Rect *A, const SDL_Rect *B);
 void render_world(SDL_Instance *instance, SDL_Rect *rect);
-void handleEvent(SDL_Event *event, SDL_Rect *object, Texture *texture, int speed, double *degrees);
-void rotateLogic(int *objX, int *objY, int *objW, int *objH, double degrees);
+void handleEvent(SDL_Event *event, SDL_Rect *object, Texture *texture, float speed, double *degrees, float deltaTime);
 int truncateDivisionFloat(float value, float divisor);
 void castRays(SDL_Instance *instance, float playerX, float playerY, float playerRotation);
 float castSingleRay(float playerX, float playerY, float rayAngle);
