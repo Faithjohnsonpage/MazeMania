@@ -1,7 +1,5 @@
 #include "../headers/mazemania.h"
 
-float castSingleRay(float playerX, float playerY, float rayAngle);
-
 /**
  * truncateDivisionFloat - Performs a truncated division of a float
  * value by a divisor
@@ -37,8 +35,7 @@ int truncateDivisionFloat(float value, float divisor)
  * the player's field of view and render the environment accordingly.
  */
 
-void castRays(SDL_Instance *instance, float playerX, float playerY,
-		float playerRotation)
+void castRays(SDL_Instance *instance, float playerX, float playerY, float playerRotation)
 {
 	float rayAngle;
 	float rayDistance;
@@ -91,96 +88,105 @@ float castSingleRay(float playerX, float playerY, float rayAngle)
 	float rayAngleRad = DEG_TO_RAD(rayAngle);
 
 	/* Define variables to track intersection points */
-	int grid_HoriX, grid_HoriY, grid_VertiX, gridVertiY;
-	float hori_constX, hori_constY, verti_constX, verti_constY;
 	float horizontalHitX, horizontalHitY, verticalHitX, verticalHitY;
-	int wallCollideHori = 0, wallCollideVerti = 0;
-	float horizontalDistance, verticalDistance;
+	float horizontalDistance = INFINITY, verticalDistance = INFINITY;
+	int foundHorizontalWallHit = 0, foundVerticalWallHit = 0;
 
-	/* Define variables to indicate the direction the ray is facing */
-	int isRayFacingDown = (rayAngle >= 0 && rayAngle < 180);
+	int isRayFacingDown = (rayAngle > 0 && rayAngle < 180);
 	int isRayFacingUp = !isRayFacingDown;
-	int isRayFacingRight = (rayAngle < 90 || rayAngle >= 270);
+	int isRayFacingRight = (rayAngle < 90 || rayAngle > 270);
 	int isRayFacingLeft = !isRayFacingRight;
 
 	/* Horizontal intersections */
-	hori_constX = TILE_SIZE / tan(rayAngleRad);
-	hori_constY = TILE_SIZE;
+	float ystep = TILE_SIZE;
+	float xstep = TILE_SIZE / tan(rayAngleRad);
 
-	if (isRayFacingUp)
+	float nextHorizontalTouchX, nextHorizontalTouchY;
+
+	if (isRayFacingDown)
 	{
-		horizontalHitY = truncateDivisionFloat(playerY, TILE_SIZE) * TILE_SIZE - 1;
-		grid_HoriY = truncateDivisionFloat(horizontalHitY, TILE_SIZE);
-		horizontalHitX = playerX + (playerY - horizontalHitY) / tan(rayAngleRad);
-		grid_HoriX = truncateDivisionFloat(horizontalHitX, TILE_SIZE);
-		hori_constY *= -1;
+		nextHorizontalTouchY = truncateDivisionFloat(playerY, TILE_SIZE) * TILE_SIZE + TILE_SIZE;
+		nextHorizontalTouchX = playerX + (nextHorizontalTouchY - playerY) / tan(rayAngleRad);
+		ystep = TILE_SIZE;
+		xstep = TILE_SIZE / tan(rayAngleRad);
 	}
 	else
 	{
-		horizontalHitY = truncateDivisionFloat(playerY, TILE_SIZE) * TILE_SIZE + TILE_SIZE;
-		grid_HoriY = truncateDivisionFloat(horizontalHitY, TILE_SIZE);
-		horizontalHitX = playerX + (playerY - horizontalHitY) / tan(rayAngleRad);
-		grid_HoriX = truncateDivisionFloat(horizontalHitX, TILE_SIZE);
+		nextHorizontalTouchY = truncateDivisionFloat(playerY, TILE_SIZE) * TILE_SIZE - 1;
+		nextHorizontalTouchX = playerX + (nextHorizontalTouchY - playerY) / tan(rayAngleRad);
+		ystep = -TILE_SIZE;
+		xstep = -TILE_SIZE / tan(rayAngleRad);
 	}
 
-	/* Horizontal wall hit detection */
-	while (grid_HoriX >= 0 && grid_HoriX < mapWidth &&
-			grid_HoriY >= 0 && grid_HoriY < mapHeight)
+	while (nextHorizontalTouchX >= 0 && nextHorizontalTouchX < mapWidth * TILE_SIZE &&
+			nextHorizontalTouchY >= 0 && nextHorizontalTouchY < mapHeight * TILE_SIZE)
 	{
-		if (worldMap[grid_HoriY][grid_HoriX] != 0)
+		int gridX = truncateDivisionFloat(nextHorizontalTouchX, TILE_SIZE);
+		int gridY = truncateDivisionFloat(nextHorizontalTouchY + (isRayFacingUp ? -1 : 0), TILE_SIZE);
+
+		if (gridX >= 0 && gridX < mapWidth && gridY >= 0 && gridY < mapHeight &&
+				worldMap[gridY][gridX] != 0)
 		{
-			wallCollideHori = 1;
+			horizontalHitX = nextHorizontalTouchX;
+			horizontalHitY = nextHorizontalTouchY;
+			horizontalDistance = hypot(horizontalHitX - playerX, horizontalHitY - playerY);
+			foundHorizontalWallHit = 1;
 			break;
 		}
-		horizontalHitX += hori_constX;
-		horizontalHitY += hori_constY;
-		grid_HoriX = truncateDivisionFloat(horizontalHitX, TILE_SIZE);
-		grid_HoriY = truncateDivisionFloat(horizontalHitY, TILE_SIZE);
+		else
+		{
+			nextHorizontalTouchX += xstep;
+			nextHorizontalTouchY += ystep;
+		}
 	}
 
 	/* Vertical intersections */
-	verti_constY = TILE_SIZE * tan(rayAngleRad);
-	verti_constX = TILE_SIZE;
+	ystep = TILE_SIZE * tan(rayAngleRad);
+	xstep = TILE_SIZE;
 
-	if (isRayFacingLeft)
+	float nextVerticalTouchX, nextVerticalTouchY;
+
+	if (isRayFacingRight)
 	{
-		verticalHitX = truncateDivisionFloat(playerX, TILE_SIZE) * TILE_SIZE - 1;
-		grid_VertiX = truncateDivisionFloat(verticalHitX, TILE_SIZE);
-		verticalHitY = playerY + (playerX - verticalHitX) * tan(rayAngleRad);
-		gridVertiY = truncateDivisionFloat(verticalHitY, TILE_SIZE);
-		verti_constX *= -1;
+		nextVerticalTouchX = truncateDivisionFloat(playerX, TILE_SIZE) * TILE_SIZE + TILE_SIZE;
+		nextVerticalTouchY = playerY + (nextVerticalTouchX - playerX) * tan(rayAngleRad);
+		xstep = TILE_SIZE;
+		ystep = TILE_SIZE * tan(rayAngleRad);
 	}
 	else
 	{
-		verticalHitX = truncateDivisionFloat(playerX, TILE_SIZE) * TILE_SIZE + TILE_SIZE;
-		grid_VertiX = truncateDivisionFloat(verticalHitX, TILE_SIZE);
-		verticalHitY = playerY + (playerX - verticalHitX) * tan(rayAngleRad);
-		gridVertiY = truncateDivisionFloat(verticalHitY, TILE_SIZE);
+		nextVerticalTouchX = truncateDivisionFloat(playerX, TILE_SIZE) * TILE_SIZE - 1;
+		nextVerticalTouchY = playerY + (nextVerticalTouchX - playerX) * tan(rayAngleRad);
+		xstep = -TILE_SIZE;
+		ystep = -TILE_SIZE * tan(rayAngleRad);
 	}
 
-	/* Vertical wall hit detection */
-	while (grid_VertiX >= 0 && grid_VertiX < mapWidth &&
-			gridVertiY >= 0 && gridVertiY < mapHeight)
+	while (nextVerticalTouchX >= 0 && nextVerticalTouchX < mapWidth * TILE_SIZE &&
+			nextVerticalTouchY >= 0 && nextVerticalTouchY < mapHeight * TILE_SIZE)
 	{
-		if (worldMap[gridVertiY][grid_VertiX] != 0)
+		int gridX = truncateDivisionFloat(nextVerticalTouchX + (isRayFacingLeft ? -1 : 0), TILE_SIZE);
+		int gridY = truncateDivisionFloat(nextVerticalTouchY, TILE_SIZE);
+
+		if (gridX >= 0 && gridX < mapWidth && gridY >= 0 && gridY < mapHeight &&
+				worldMap[gridY][gridX] != 0)
 		{
-			wallCollideVerti = 1;
+			verticalHitX = nextVerticalTouchX;
+			verticalHitY = nextVerticalTouchY;
+			verticalDistance = hypot(verticalHitX - playerX, verticalHitY - playerY);
+			foundVerticalWallHit = 1;
 			break;
 		}
-		verticalHitX += verti_constX;
-		verticalHitY += verti_constY;
-		grid_VertiX = truncateDivisionFloat(verticalHitX, TILE_SIZE);
-		gridVertiY = truncateDivisionFloat(verticalHitY, TILE_SIZE);
+		else
+		{
+			nextVerticalTouchX += xstep;
+			nextVerticalTouchY += ystep;
+		}
 	}
 
-	/* Calculate distances */
-	horizontalDistance = wallCollideHori ? hypot(horizontalHitX -
-			playerX, horizontalHitY - playerY) : INFINITY;
-	verticalDistance = wallCollideVerti ? hypot(verticalHitX -
-			playerX, verticalHitY - playerY) : INFINITY;
-
 	/* Return the shortest distance */
-	return (fmin(horizontalDistance, verticalDistance));
+	return (foundHorizontalWallHit && foundVerticalWallHit) ?
+		fmin(horizontalDistance, verticalDistance) :
+		(foundHorizontalWallHit ? horizontalDistance : verticalDistance);
 }
 
 /**
@@ -198,8 +204,7 @@ float castSingleRay(float playerX, float playerY, float rayAngle)
  * a line from the player's position to the calculated end point.
  */
 
-void drawRay(SDL_Renderer *renderer, float playerX, float playerY,
-		float rayAngle, float rayDistance)
+void drawRay(SDL_Renderer *renderer, float playerX, float playerY, float rayAngle, float rayDistance)
 {
 	float rayAngleRad = DEG_TO_RAD(rayAngle);
 
@@ -207,9 +212,8 @@ void drawRay(SDL_Renderer *renderer, float playerX, float playerY,
 	float rayEndX = playerX + cos(rayAngleRad) * rayDistance;
 	float rayEndY = playerY + sin(rayAngleRad) * rayDistance;
 
-	SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);  /* Red color */
+	SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); /* Red color */
 
 	/* Draw the line representing the ray from the player to the end point */
-	SDL_RenderDrawLine(renderer, (int)playerX, (int)playerY,
-			(int)rayEndX, (int)rayEndY);
+	SDL_RenderDrawLine(renderer, (int)playerX, (int)playerY, (int)rayEndX, (int)rayEndY);
 }

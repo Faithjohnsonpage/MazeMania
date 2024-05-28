@@ -1,18 +1,16 @@
 #include "../headers/mazemania.h"
 
-void handleEvent(SDL_Event *event, SDL_Rect *object, Texture *texture, int speed, double *degrees);
-
 int worldMap[mapHeight][mapWidth] = {
 	{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
 	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+	{1, 2, 2, 2, 2, 2, 0, 0, 0, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 1},
 	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
 	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 1},
 	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 1},
 	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 1},
 	{1, 0, 2, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 1},
 	{1, 0, 2, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-	{1, 0, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+	{1, 0, 2, 2, 2, 2, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1},
 	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
 	{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
 };
@@ -114,10 +112,16 @@ void render_world(SDL_Instance *instance, SDL_Rect *rect)
  * @texture: Pointer to the Texture structure representing object's texture.
  * @speed: Speed at which the object moves.
  * @degrees: Pointer to the angle in degrees to rotate the object.
+ * @deltaTime: Time elapsed since the last frame.
+ *
+ * This function processes SDL events such as keyboard input to move and
+ * rotate the object within the game world. It updates the object's position
+ * and rotation angle based on the input events, ensuring the movement is
+ * frame-rate independent by using the deltaTime parameter.
  */
 
 void handleEvent(SDL_Event *event, SDL_Rect *object, Texture *texture,
-		int speed, double *degrees)
+		float speed, double *degrees, float deltaTime)
 {
 	SDL_Rect prevPosition = *object;
 
@@ -127,22 +131,22 @@ void handleEvent(SDL_Event *event, SDL_Rect *object, Texture *texture,
 		switch (event->key.keysym.sym)
 		{
 			case SDLK_UP:
-				object->y -= speed;
+				object->y -= speed * deltaTime;
 				break;
 			case SDLK_DOWN:
-				object->y += speed;
+				object->y += speed * deltaTime;
 				break;
 			case SDLK_LEFT:
-				object->x -= speed;
+				object->x -= speed * deltaTime;
 				break;
 			case SDLK_RIGHT:
-				object->x += speed;
+				object->x += speed * deltaTime;
 				break;
 			case SDLK_a:
-				*degrees -= 15;
+				*degrees -= 90 * deltaTime;
 				break;
 			case SDLK_d:
-				*degrees += 15;
+				*degrees += 90 * deltaTime;
 				break;
 		}
 	}
@@ -217,11 +221,13 @@ int main(void)
 
 	SDL_Event event;
 	SDL_Rect rect;
-	SDL_Rect object = {60, 60, 0, 0};
+	SDL_Rect object = {480, 480, 0, 0};
 	int running = 1;
-	int speed = 5;
 	double degrees = 0;
 	Texture objectTexture;
+	float speed = 200;
+	float deltaTime;
+	Uint32 lastFrameTime = SDL_GetTicks();
 
 	initTexture(&objectTexture);
 
@@ -237,6 +243,10 @@ int main(void)
 
 	while (running)
 	{
+		Uint32 currentTime = SDL_GetTicks();
+		deltaTime = (currentTime - lastFrameTime) / 1000.0f;
+		lastFrameTime = currentTime;
+
 		while (SDL_PollEvent(&event))
 		{
 			if (event.type == SDL_QUIT)
@@ -244,7 +254,7 @@ int main(void)
 				running = 0;
 			}
 
-			handleEvent(&event, &object, &objectTexture, speed, &degrees);
+			handleEvent(&event, &object, &objectTexture, speed, &degrees, deltaTime);
 		}
 
 		/* Clear the window with a grey color */
