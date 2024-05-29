@@ -12,9 +12,10 @@
 #define TILE_SIZE 60
 #define SCREEN_WIDTH 1260
 #define SCREEN_HEIGHT 720
-#define NUM_RAYS 300
+#define NUM_RAYS SCREEN_WIDTH
 #define FOV_ANGLE 60
 #define DEG_TO_RAD(angle) ((angle) * M_PI / 180.0)
+#define DIST_TO_PROJ_PLANE ((NUM_RAYS / 2) / tan(DEG_TO_RAD(FOV_ANGLE) / 2))
 
 extern int worldMap[mapHeight][mapWidth];
 
@@ -63,5 +64,7 @@ int truncateDivisionFloat(float value, float divisor);
 void castRays(SDL_Instance *instance, float playerX, float playerY, float playerRotation);
 float castSingleRay(float playerX, float playerY, float rayAngle);
 void drawRay(SDL_Renderer *renderer, float playerX, float playerY, float rayAngle, float rayDistance);
+void drawWallSlice(SDL_Renderer *renderer, int x, int wallHeight);
+void drawWallSlice(SDL_Renderer *renderer, int rayIndex, int wallHeight);
 
 #endif /* MAZEMANIA_H_ */
