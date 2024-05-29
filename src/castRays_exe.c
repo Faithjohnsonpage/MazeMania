@@ -38,8 +38,9 @@ int truncateDivisionFloat(float value, float divisor)
 void castRays(SDL_Instance *instance, float playerX, float playerY, float playerRotation)
 {
 	float rayAngle;
-	float rayDistance;
+	float rayDistance, correctedDistance;
 	float angleIncrement = FOV_ANGLE / (float)NUM_RAYS;
+	int ray, wallHeight;
 
 	/* Normalize the player's rotation angle to [0, 360) range */
 	playerRotation = fmod(playerRotation, 360);
@@ -48,7 +49,7 @@ void castRays(SDL_Instance *instance, float playerX, float playerY, float player
 		playerRotation += 360;
 	}
 
-	for (int ray = 0; ray < NUM_RAYS; ray++)
+	for (ray = 0; ray < NUM_RAYS; ray++)
 	{
 		/* Calculate the angle for this ray, considering player's rotation */
 		rayAngle = playerRotation - (FOV_ANGLE / 2) + ray * angleIncrement;
@@ -64,7 +65,14 @@ void castRays(SDL_Instance *instance, float playerX, float playerY, float player
 		rayDistance = castSingleRay(playerX, playerY, rayAngle);
 
 		/* Draw the ray */
-		drawRay(instance->renderer, playerX, playerY, rayAngle, rayDistance);
+		//drawRay(instance->renderer, playerX, playerY, rayAngle, rayDistance);
+
+		/* Calculate the projected wall height */
+		correctedDistance = rayDistance * cos(DEG_TO_RAD(rayAngle - playerRotation));
+        wallHeight = (int)((TILE_SIZE / correctedDistance) * DIST_TO_PROJ_PLANE);
+
+        /* Draw the wall slice */
+        drawWallSlice(instance->renderer, ray, wallHeight);
 	}
 }
 
@@ -91,6 +99,7 @@ float castSingleRay(float playerX, float playerY, float rayAngle)
 	float horizontalHitX, horizontalHitY, verticalHitX, verticalHitY;
 	float horizontalDistance = INFINITY, verticalDistance = INFINITY;
 	int foundHorizontalWallHit = 0, foundVerticalWallHit = 0;
+	int gridX, gridY;
 
 	int isRayFacingDown = (rayAngle > 0 && rayAngle < 180);
 	int isRayFacingUp = !isRayFacingDown;
@@ -101,7 +110,7 @@ float castSingleRay(float playerX, float playerY, float rayAngle)
 	float ystep = TILE_SIZE;
 	float xstep = TILE_SIZE / tan(rayAngleRad);
 
-	float nextHorizontalTouchX, nextHorizontalTouchY;
+	float nextHorizontalTouchX, nextHorizontalTouchY, nextVerticalTouchX, nextVerticalTouchY;
 
 	if (isRayFacingDown)
 	{
@@ -121,8 +130,8 @@ float castSingleRay(float playerX, float playerY, float rayAngle)
 	while (nextHorizontalTouchX >= 0 && nextHorizontalTouchX < mapWidth * TILE_SIZE &&
 			nextHorizontalTouchY >= 0 && nextHorizontalTouchY < mapHeight * TILE_SIZE)
 	{
-		int gridX = truncateDivisionFloat(nextHorizontalTouchX, TILE_SIZE);
-		int gridY = truncateDivisionFloat(nextHorizontalTouchY + (isRayFacingUp ? -1 : 0), TILE_SIZE);
+		gridX = truncateDivisionFloat(nextHorizontalTouchX, TILE_SIZE);
+		gridY = truncateDivisionFloat(nextHorizontalTouchY + (isRayFacingUp ? -1 : 0), TILE_SIZE);
 
 		if (gridX >= 0 && gridX < mapWidth && gridY >= 0 && gridY < mapHeight &&
 				worldMap[gridY][gridX] != 0)
@@ -144,8 +153,6 @@ float castSingleRay(float playerX, float playerY, float rayAngle)
 	ystep = TILE_SIZE * tan(rayAngleRad);
 	xstep = TILE_SIZE;
 
-	float nextVerticalTouchX, nextVerticalTouchY;
-
 	if (isRayFacingRight)
 	{
 		nextVerticalTouchX = truncateDivisionFloat(playerX, TILE_SIZE) * TILE_SIZE + TILE_SIZE;
@@ -164,8 +171,8 @@ float castSingleRay(float playerX, float playerY, float rayAngle)
 	while (nextVerticalTouchX >= 0 && nextVerticalTouchX < mapWidth * TILE_SIZE &&
 			nextVerticalTouchY >= 0 && nextVerticalTouchY < mapHeight * TILE_SIZE)
 	{
-		int gridX = truncateDivisionFloat(nextVerticalTouchX + (isRayFacingLeft ? -1 : 0), TILE_SIZE);
-		int gridY = truncateDivisionFloat(nextVerticalTouchY, TILE_SIZE);
+		gridX = truncateDivisionFloat(nextVerticalTouchX + (isRayFacingLeft ? -1 : 0), TILE_SIZE);
+		gridY = truncateDivisionFloat(nextVerticalTouchY, TILE_SIZE);
 
 		if (gridX >= 0 && gridX < mapWidth && gridY >= 0 && gridY < mapHeight &&
 				worldMap[gridY][gridX] != 0)
@@ -216,4 +223,26 @@ void drawRay(SDL_Renderer *renderer, float playerX, float playerY, float rayAngl
 
 	/* Draw the line representing the ray from the player to the end point */
 	SDL_RenderDrawLine(renderer, (int)playerX, (int)playerY, (int)rayEndX, (int)rayEndY);
+}
+
+/**
+ * drawWallSlice - Draws a vertical wall slice in the renderer.
+ * @renderer: The SDL renderer used to draw the wall slice.
+ * @rayIndex: The index of the ray corresponding to the column being drawn.
+ * @wallHeight: The height of the wall slice to be drawn.
+ *
+ * This function draws a vertical line representing a wall slice in a
+ * raycasting engine. The slice is drawn at the position specified by the ray
+ * index, with the given height. The top and bottom of the wall slice are
+ * calculated based on the height of the screen and the height of the
+ * wall slice.
+ */
+
+void drawWallSlice(SDL_Renderer *renderer, int rayIndex, int wallHeight)
+{
+    int wallTop = (SCREEN_HEIGHT / 2) - (wallHeight / 2);
+    int wallBottom = (SCREEN_HEIGHT / 2) + (wallHeight / 2);
+
+    SDL_SetRenderDrawColor(renderer, 255, 253, 208, 255);
+    SDL_RenderDrawLine(renderer, rayIndex, wallTop, rayIndex, wallBottom);
 }

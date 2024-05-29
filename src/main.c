@@ -263,12 +263,14 @@ int main(void)
 
 		render_world(&instance, &rect);
 
-		/* Cast rays for lighting effect */
-		castRays(&instance, object.x, object.y, degrees);
-
 		/* Render the moving object with rotation */
 		SDL_RenderCopyEx(instance.renderer, objectTexture.texture, NULL,
 				&object, degrees, NULL, SDL_FLIP_NONE);
+
+		SDL_RenderClear(instance.renderer);
+
+		/* Cast rays for lighting effect */
+		castRays(&instance, object.x, object.y, degrees);
 
 		/* Present the renderer */
 		SDL_RenderPresent(instance.renderer);
