@@ -64,24 +64,28 @@ int init_instance(SDL_Instance *instance)
  * render_world - Renders the world map.
  * @instance: Pointer to SDL_Instance structure with window and renderer.
  * @rect: Pointer to SDL_Rect structure defining map element dimensions.
+ * @isMinimap: Indicates whether the function is being called for a mini-map.
+ * If true, the function performs operations specific to the mini-map.
+ * If false, it performs the standard operations.
  *
  * This function renders the world map using the SDL renderer specified in the
  * SDL_Instance structure. The size of each map element is defined by
  * the dimensions provided in the SDL_Rect structure.
  */
 
-void render_world(SDL_Instance *instance, SDL_Rect *rect)
+void render_world(SDL_Instance *instance, SDL_Rect *rect, bool isMinimap)
 {
-	rect->w = TILE_SIZE;
-	rect->h = TILE_SIZE;
+	float scale = isMinimap ? MINIMAP_SCALE : 1.0f;
 	int y, x;
+	rect->w = TILE_SIZE * scale;
+	rect->h = TILE_SIZE * scale;
 
 	for (y = 0; y < mapHeight; y++)
 	{
 		for (x = 0; x < mapWidth; x++)
 		{
-			rect->x = x * TILE_SIZE;
-			rect->y = y * TILE_SIZE;
+			rect->x = x * TILE_SIZE * scale;
+			rect->y = y * TILE_SIZE * scale;
 
 			if (worldMap[y][x] == 1) /* Brown (Fence) */
 			{
@@ -124,6 +128,7 @@ void handleEvent(SDL_Event *event, SDL_Rect *object, Texture *texture,
 		float speed, double *degrees, float deltaTime)
 {
 	SDL_Rect prevPosition = *object;
+	int y, x;
 
 	/* Handle keyboard input for movement */
 	if (event->type == SDL_KEYDOWN)
@@ -151,22 +156,22 @@ void handleEvent(SDL_Event *event, SDL_Rect *object, Texture *texture,
 		}
 	}
 
-	if (object->x < 60)
-		object->x = 60;
+	if (object->x < TILE_SIZE)
+		object->x = TILE_SIZE;
 
-	if ((object->x + texture->width) > SCREEN_WIDTH - 60)
-		object->x = SCREEN_WIDTH - 60 - texture->width;
+	if ((object->x + texture->width) > SCREEN_WIDTH - TILE_SIZE)
+		object->x = SCREEN_WIDTH - TILE_SIZE - texture->width;
 
-	if (object->y < 60)
-		object->y = 60;
+	if (object->y < TILE_SIZE)
+		object->y = TILE_SIZE;
 
-	if ((object->y + texture->height) > SCREEN_HEIGHT - 60)
-		object->y = SCREEN_HEIGHT - 60 - texture->height;
+	if ((object->y + texture->height) > SCREEN_HEIGHT - TILE_SIZE)
+		object->y = SCREEN_HEIGHT - TILE_SIZE - texture->height;
 
 	/* Check for collision with internal walls */
-	for (int y = 0; y < mapHeight; y++)
+	for (y = 0; y < mapHeight; y++)
 	{
-		for (int x = 0; x < mapWidth; x++)
+		for (x = 0; x < mapWidth; x++)
 		{
 			if (worldMap[y][x] == 2)
 			{
@@ -222,17 +227,25 @@ int main(void)
 	SDL_Event event;
 	SDL_Rect rect;
 	SDL_Rect object = {480, 480, 0, 0};
+	SDL_Rect miniobject = {96, 96, 0, 0};
 	int running = 1;
 	double degrees = 0;
-	Texture objectTexture;
+	Texture objectTexture, miniTexture;
 	float speed = 200;
 	float deltaTime;
 	Uint32 lastFrameTime = SDL_GetTicks();
 
 	initTexture(&objectTexture);
+	initTexture(&miniTexture);
 
 	if (loadTexture(instance.renderer,
-				"../images/dot.bmp", &objectTexture) != 0)
+				"../images/dot.bmp", &objectTexture, false) != 0)
+	{
+		return (1);
+	}
+
+	if (loadTexture(instance.renderer,
+				"../images/dot.bmp", &miniTexture, true) != 0)
 	{
 		return (1);
 	}
@@ -240,6 +253,10 @@ int main(void)
 	/* Update the object rectangle with the texture's dimensions */
 	object.w = objectTexture.width;
 	object.h = objectTexture.height;
+
+	/* Update the miniobject rectangle with the texture's dimensions */
+	miniobject.w = miniTexture.width;
+	miniobject.h = miniTexture.height;
 
 	while (running)
 	{
@@ -255,13 +272,18 @@ int main(void)
 			}
 
 			handleEvent(&event, &object, &objectTexture, speed, &degrees, deltaTime);
+
+			/* Update miniobject based on object position */
+			miniobject.x = object.x * MINIMAP_SCALE;
+			miniobject.y = object.y * MINIMAP_SCALE;
 		}
 
 		/* Clear the window with a grey color */
 		SDL_SetRenderDrawColor(instance.renderer, 128, 128, 128, 255);
 		SDL_RenderClear(instance.renderer);
 
-		render_world(&instance, &rect);
+		/* Main game rendering */
+		render_world(&instance, &rect, false);
 
 		/* Render the moving object with rotation */
 		SDL_RenderCopyEx(instance.renderer, objectTexture.texture, NULL,
@@ -269,8 +291,18 @@ int main(void)
 
 		SDL_RenderClear(instance.renderer);
 
-		/* Cast rays for lighting effect */
-		castRays(&instance, object.x, object.y, degrees);
+		/* Cast rays for lighting effect for main map */
+		castRays(&instance, object.x, object.y, degrees, false);
+
+		/* Minimap rendering */
+		render_world(&instance, &rect, true);
+
+		/* Render the moving miniobject with rotation */
+		SDL_RenderCopyEx(instance.renderer, miniTexture.texture, NULL,
+				&miniobject, degrees, NULL, SDL_FLIP_NONE);
+
+		/* Cast rays for lighting effect in mini_map */
+		castRays(&instance, miniobject.x, miniobject.y, degrees, true);
 
 		/* Present the renderer */
 		SDL_RenderPresent(instance.renderer);
@@ -280,6 +312,7 @@ int main(void)
 	}
 
 	freeTexture(&objectTexture);
+	freeTexture(&miniTexture);
 	cleanup(&instance);
 
 	return (0);

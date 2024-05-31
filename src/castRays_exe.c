@@ -27,6 +27,9 @@ int truncateDivisionFloat(float value, float divisor)
  * @playerX: The x-coordinate of the player's position
  * @playerY: The y-coordinate of the player's position
  * @playerRotation: The player's current rotation angle
+ * @isMiniMap: Indicates whether the function is being called for a mini-map.
+ * If true, the function performs operations specific to the mini-map.
+ * If false, it performs the standard operations.
  *
  * This function casts multiple rays from the player's position in different
  * directions based on the player's rotation. It utilizes the SDL_Instance
@@ -35,11 +38,12 @@ int truncateDivisionFloat(float value, float divisor)
  * the player's field of view and render the environment accordingly.
  */
 
-void castRays(SDL_Instance *instance, float playerX, float playerY, float playerRotation)
+void castRays(SDL_Instance *instance, float playerX, float playerY, float playerRotation, bool isMiniMap)
 {
+	float scale = isMiniMap ? MINIMAP_SCALE : 1.0f;
 	float rayAngle;
 	float rayDistance, correctedDistance;
-	float angleIncrement = FOV_ANGLE / (float)NUM_RAYS;
+	float angleIncrement = FOV_ANGLE / (float)(NUM_RAYS * scale);
 	int ray, wallHeight;
 
 	/* Normalize the player's rotation angle to [0, 360) range */
@@ -49,7 +53,7 @@ void castRays(SDL_Instance *instance, float playerX, float playerY, float player
 		playerRotation += 360;
 	}
 
-	for (ray = 0; ray < NUM_RAYS; ray++)
+	for (ray = 0; ray < (NUM_RAYS * scale); ray++)
 	{
 		/* Calculate the angle for this ray, considering player's rotation */
 		rayAngle = playerRotation - (FOV_ANGLE / 2) + ray * angleIncrement;
@@ -62,17 +66,20 @@ void castRays(SDL_Instance *instance, float playerX, float playerY, float player
 		}
 
 		/* Calculate the distance of the ray */
-		rayDistance = castSingleRay(playerX, playerY, rayAngle);
+		rayDistance = castSingleRay(playerX, playerY, rayAngle, scale);
 
-		/* Draw the ray */
-		//drawRay(instance->renderer, playerX, playerY, rayAngle, rayDistance);
+		if (isMiniMap)
+			drawRay(instance->renderer, playerX, playerY, rayAngle, rayDistance);
 
-		/* Calculate the projected wall height */
-		correctedDistance = rayDistance * cos(DEG_TO_RAD(rayAngle - playerRotation));
-        wallHeight = (int)((TILE_SIZE / correctedDistance) * DIST_TO_PROJ_PLANE);
+		if (!isMiniMap)
+		{
+			/* Calculate the projected wall height */
+			correctedDistance = rayDistance * cos(DEG_TO_RAD(rayAngle - playerRotation));
+			wallHeight = (int)((TILE_SIZE / correctedDistance) * DIST_TO_PROJ_PLANE);
 
-        /* Draw the wall slice */
-        drawWallSlice(instance->renderer, ray, wallHeight);
+			/* Draw the wall slice */
+			drawWallSlice(instance->renderer, ray, wallHeight);
+		}
 	}
 }
 
@@ -81,6 +88,7 @@ void castRays(SDL_Instance *instance, float playerX, float playerY, float player
  * @playerX: The x-coordinate of the player's position
  * @playerY: The y-coordinate of the player's position
  * @rayAngle: The angle at which the ray is cast
+ * @scale: Specifies the scaling factor to be applied.
  *
  * This function casts a single ray from the player's position at the specified
  * angle and calculates the distance the ray travels before hitting an obstacle
@@ -90,10 +98,11 @@ void castRays(SDL_Instance *instance, float playerX, float playerY, float player
  * Return: The distance the ray travels before hitting an obstacle.
  */
 
-float castSingleRay(float playerX, float playerY, float rayAngle)
+float castSingleRay(float playerX, float playerY, float rayAngle, float scale)
 {
 	/* Convert angle to radians for trigonometric functions */
 	float rayAngleRad = DEG_TO_RAD(rayAngle);
+	float TILE_SIZED = TILE_SIZE * scale;
 
 	/* Define variables to track intersection points */
 	float horizontalHitX, horizontalHitY, verticalHitX, verticalHitY;
@@ -107,31 +116,31 @@ float castSingleRay(float playerX, float playerY, float rayAngle)
 	int isRayFacingLeft = !isRayFacingRight;
 
 	/* Horizontal intersections */
-	float ystep = TILE_SIZE;
-	float xstep = TILE_SIZE / tan(rayAngleRad);
+	float ystep = TILE_SIZED;
+	float xstep = (TILE_SIZED) / tan(rayAngleRad);
 
 	float nextHorizontalTouchX, nextHorizontalTouchY, nextVerticalTouchX, nextVerticalTouchY;
 
 	if (isRayFacingDown)
 	{
-		nextHorizontalTouchY = truncateDivisionFloat(playerY, TILE_SIZE) * TILE_SIZE + TILE_SIZE;
+		nextHorizontalTouchY = truncateDivisionFloat(playerY, (TILE_SIZED)) * TILE_SIZED + TILE_SIZED;
 		nextHorizontalTouchX = playerX + (nextHorizontalTouchY - playerY) / tan(rayAngleRad);
-		ystep = TILE_SIZE;
-		xstep = TILE_SIZE / tan(rayAngleRad);
+		ystep = TILE_SIZED;
+		xstep = TILE_SIZED / tan(rayAngleRad);
 	}
 	else
 	{
-		nextHorizontalTouchY = truncateDivisionFloat(playerY, TILE_SIZE) * TILE_SIZE - 1;
+		nextHorizontalTouchY = truncateDivisionFloat(playerY, TILE_SIZED) * TILE_SIZED - 1;
 		nextHorizontalTouchX = playerX + (nextHorizontalTouchY - playerY) / tan(rayAngleRad);
-		ystep = -TILE_SIZE;
-		xstep = -TILE_SIZE / tan(rayAngleRad);
+		ystep = -TILE_SIZED;
+		xstep = -TILE_SIZED / tan(rayAngleRad);
 	}
 
-	while (nextHorizontalTouchX >= 0 && nextHorizontalTouchX < mapWidth * TILE_SIZE &&
-			nextHorizontalTouchY >= 0 && nextHorizontalTouchY < mapHeight * TILE_SIZE)
+	while (nextHorizontalTouchX >= 0 && nextHorizontalTouchX < mapWidth * TILE_SIZED &&
+			nextHorizontalTouchY >= 0 && nextHorizontalTouchY < mapHeight * TILE_SIZED)
 	{
-		gridX = truncateDivisionFloat(nextHorizontalTouchX, TILE_SIZE);
-		gridY = truncateDivisionFloat(nextHorizontalTouchY + (isRayFacingUp ? -1 : 0), TILE_SIZE);
+		gridX = truncateDivisionFloat(nextHorizontalTouchX, TILE_SIZED);
+		gridY = truncateDivisionFloat(nextHorizontalTouchY + (isRayFacingUp ? -1 : 0), TILE_SIZED);
 
 		if (gridX >= 0 && gridX < mapWidth && gridY >= 0 && gridY < mapHeight &&
 				worldMap[gridY][gridX] != 0)
@@ -150,29 +159,29 @@ float castSingleRay(float playerX, float playerY, float rayAngle)
 	}
 
 	/* Vertical intersections */
-	ystep = TILE_SIZE * tan(rayAngleRad);
-	xstep = TILE_SIZE;
+	ystep = TILE_SIZED * tan(rayAngleRad);
+	xstep = TILE_SIZED;
 
 	if (isRayFacingRight)
 	{
-		nextVerticalTouchX = truncateDivisionFloat(playerX, TILE_SIZE) * TILE_SIZE + TILE_SIZE;
+		nextVerticalTouchX = truncateDivisionFloat(playerX, TILE_SIZED) * TILE_SIZED + TILE_SIZED;
 		nextVerticalTouchY = playerY + (nextVerticalTouchX - playerX) * tan(rayAngleRad);
-		xstep = TILE_SIZE;
-		ystep = TILE_SIZE * tan(rayAngleRad);
+		xstep = TILE_SIZED;
+		ystep = TILE_SIZED * tan(rayAngleRad);
 	}
 	else
 	{
-		nextVerticalTouchX = truncateDivisionFloat(playerX, TILE_SIZE) * TILE_SIZE - 1;
+		nextVerticalTouchX = truncateDivisionFloat(playerX, TILE_SIZED) * TILE_SIZED - 1;
 		nextVerticalTouchY = playerY + (nextVerticalTouchX - playerX) * tan(rayAngleRad);
-		xstep = -TILE_SIZE;
-		ystep = -TILE_SIZE * tan(rayAngleRad);
+		xstep = -TILE_SIZED;
+		ystep = -TILE_SIZED * tan(rayAngleRad);
 	}
 
-	while (nextVerticalTouchX >= 0 && nextVerticalTouchX < mapWidth * TILE_SIZE &&
-			nextVerticalTouchY >= 0 && nextVerticalTouchY < mapHeight * TILE_SIZE)
+	while (nextVerticalTouchX >= 0 && nextVerticalTouchX < mapWidth * TILE_SIZED &&
+			nextVerticalTouchY >= 0 && nextVerticalTouchY < mapHeight * TILE_SIZED)
 	{
-		gridX = truncateDivisionFloat(nextVerticalTouchX + (isRayFacingLeft ? -1 : 0), TILE_SIZE);
-		gridY = truncateDivisionFloat(nextVerticalTouchY, TILE_SIZE);
+		gridX = truncateDivisionFloat(nextVerticalTouchX + (isRayFacingLeft ? -1 : 0), TILE_SIZED);
+		gridY = truncateDivisionFloat(nextVerticalTouchY, TILE_SIZED);
 
 		if (gridX >= 0 && gridX < mapWidth && gridY >= 0 && gridY < mapHeight &&
 				worldMap[gridY][gridX] != 0)
@@ -240,9 +249,9 @@ void drawRay(SDL_Renderer *renderer, float playerX, float playerY, float rayAngl
 
 void drawWallSlice(SDL_Renderer *renderer, int rayIndex, int wallHeight)
 {
-    int wallTop = (SCREEN_HEIGHT / 2) - (wallHeight / 2);
-    int wallBottom = (SCREEN_HEIGHT / 2) + (wallHeight / 2);
+	int wallTop = (SCREEN_HEIGHT / 2) - (wallHeight / 2);
+	int wallBottom = (SCREEN_HEIGHT / 2) + (wallHeight / 2);
 
-    SDL_SetRenderDrawColor(renderer, 255, 253, 208, 255);
-    SDL_RenderDrawLine(renderer, rayIndex, wallTop, rayIndex, wallBottom);
+	SDL_SetRenderDrawColor(renderer, 255, 253, 208, 255);
+	SDL_RenderDrawLine(renderer, rayIndex, wallTop, rayIndex, wallBottom);
 }

@@ -24,6 +24,8 @@ void freeTexture(Texture *t)
 		SDL_DestroyTexture(t->texture);
 		t->texture = NULL;
 	}
+	t->width = 0;
+	t->height = 0;
 }
 
 
@@ -33,11 +35,16 @@ void freeTexture(Texture *t)
  * @path: The file path to the image.
  * @texture: Pointer to the Texture structure to store texture and
  * its dimensions.
+ * @is_miniPlayer: Indicates whether the function is being called for a
+ * mini-map. If true, the function performs operations specific to the
+ * mini-map. If false, it performs the standard operations.
  *
  * Return: 0 on success, 1 on failure.
  */
-int loadTexture(SDL_Renderer *renderer, const char *path, Texture *texture)
+int loadTexture(SDL_Renderer *renderer, const char *path, Texture *texture,
+				bool is_miniPlayer)
 {
+	float scale = is_miniPlayer ? MINIMAP_SCALE : 1.0f;
 	SDL_Surface *surface = IMG_Load(path);
 
 	if (!surface)
@@ -55,8 +62,8 @@ int loadTexture(SDL_Renderer *renderer, const char *path, Texture *texture)
 		return (1);
 	}
 
-	texture->width = surface->w;
-	texture->height = surface->h;
+	texture->width = surface->w * scale;
+	texture->height = surface->h * scale;
 	SDL_FreeSurface(surface);
 
 	return (0);
