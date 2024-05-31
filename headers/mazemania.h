@@ -16,6 +16,7 @@
 #define FOV_ANGLE 60
 #define DEG_TO_RAD(angle) ((angle) * M_PI / 180.0)
 #define DIST_TO_PROJ_PLANE ((NUM_RAYS / 2) / tan(DEG_TO_RAD(FOV_ANGLE) / 2))
+#define MINIMAP_SCALE 0.2f
 
 extern int worldMap[mapHeight][mapWidth];
 
@@ -55,14 +56,14 @@ typedef struct SDL_Texture
 int init_instance(SDL_Instance *instance);
 void initTexture(Texture *t);
 void freeTexture(Texture *t);
-int loadTexture(SDL_Renderer *renderer, const char *path, Texture *texture);
+int loadTexture(SDL_Renderer *renderer, const char *path, Texture *texture, bool is_miniPlayer);
 void cleanup(SDL_Instance *instance);
 int checkIntersection(const SDL_Rect *A, const SDL_Rect *B);
-void render_world(SDL_Instance *instance, SDL_Rect *rect);
+void render_world(SDL_Instance *instance, SDL_Rect *rect, bool isMinimap);
 void handleEvent(SDL_Event *event, SDL_Rect *object, Texture *texture, float speed, double *degrees, float deltaTime);
 int truncateDivisionFloat(float value, float divisor);
-void castRays(SDL_Instance *instance, float playerX, float playerY, float playerRotation);
-float castSingleRay(float playerX, float playerY, float rayAngle);
+void castRays(SDL_Instance *instance, float playerX, float playerY, float playerRotation, bool isMiniMap);
+float castSingleRay(float playerX, float playerY, float rayAngle, float scale);
 void drawRay(SDL_Renderer *renderer, float playerX, float playerY, float rayAngle, float rayDistance);
 void drawWallSlice(SDL_Renderer *renderer, int x, int wallHeight);
 void drawWallSlice(SDL_Renderer *renderer, int rayIndex, int wallHeight);
