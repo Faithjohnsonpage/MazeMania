@@ -53,6 +53,14 @@ typedef struct SDL_Texture
 	int height;
 } Texture;
 
+typedef struct wallTexture
+{
+    SDL_Texture *texture;
+    int width;
+    int height;
+    Uint32 *pixels;
+} wallTexture;
+
 int init_instance(SDL_Instance *instance);
 void initTexture(Texture *t);
 void freeTexture(Texture *t);
@@ -62,10 +70,17 @@ int checkIntersection(const SDL_Rect *A, const SDL_Rect *B);
 void render_world(SDL_Instance *instance, SDL_Rect *rect, bool isMinimap);
 void handleEvent(SDL_Event *event, SDL_Rect *object, Texture *texture, float speed, double *degrees, float deltaTime);
 int truncateDivisionFloat(float value, float divisor);
-void castRays(SDL_Instance *instance, float playerX, float playerY, float playerRotation, bool isMiniMap);
+void castRays(SDL_Instance *instance, float playerX, float playerY, float playerRotation, bool isMiniMap, wallTexture *wallTexture);
 float castSingleRay(float playerX, float playerY, float rayAngle, float scale);
 void drawRay(SDL_Renderer *renderer, float playerX, float playerY, float rayAngle, float rayDistance);
 void drawWallSlice(SDL_Renderer *renderer, int x, int wallHeight);
 void drawWallSlice(SDL_Renderer *renderer, int rayIndex, int wallHeight);
+
+/* Handling wall texture */
+void init_wallTexture(wallTexture *t);
+void free_wallTexture(wallTexture *t);
+Uint32 getTexturePixel(wallTexture *texture, int x, int y);
+int load_wallTexture(SDL_Renderer *renderer, const char *path, wallTexture *texture);
+void drawWallTexture(SDL_Renderer *renderer, int rayIndex, int wallHeight, wallTexture *texture, int texX);
 
 #endif /* MAZEMANIA_H_ */
