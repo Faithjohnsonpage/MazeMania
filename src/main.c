@@ -231,24 +231,23 @@ int main(void)
 	int running = 1;
 	double degrees = 0;
 	Texture objectTexture, miniTexture;
+	wallTexture wall1Texture;
 	float speed = 200;
 	float deltaTime;
 	Uint32 lastFrameTime = SDL_GetTicks();
 
 	initTexture(&objectTexture);
 	initTexture(&miniTexture);
+	init_wallTexture(&wall1Texture);
 
-	if (loadTexture(instance.renderer,
-				"../images/dot.bmp", &objectTexture, false) != 0)
+	if ((loadTexture(instance.renderer, "../images/dot.bmp", &objectTexture, false) != 0) ||
+			(loadTexture(instance.renderer, "../images/dot.bmp", &miniTexture, true) != 0) ||
+			(load_wallTexture(instance.renderer, "../images/wall5.png", &wall1Texture) != 0))
 	{
+		printf("Failed to load wall texture.\n");
 		return (1);
 	}
 
-	if (loadTexture(instance.renderer,
-				"../images/dot.bmp", &miniTexture, true) != 0)
-	{
-		return (1);
-	}
 
 	/* Update the object rectangle with the texture's dimensions */
 	object.w = objectTexture.width;
@@ -292,7 +291,7 @@ int main(void)
 		SDL_RenderClear(instance.renderer);
 
 		/* Cast rays for lighting effect for main map */
-		castRays(&instance, object.x, object.y, degrees, false);
+		castRays(&instance, object.x, object.y, degrees, false, &wall1Texture);
 
 		/* Minimap rendering */
 		render_world(&instance, &rect, true);
@@ -302,7 +301,7 @@ int main(void)
 				&miniobject, degrees, NULL, SDL_FLIP_NONE);
 
 		/* Cast rays for lighting effect in mini_map */
-		castRays(&instance, miniobject.x, miniobject.y, degrees, true);
+		castRays(&instance, miniobject.x, miniobject.y, degrees, true, &wall1Texture);
 
 		/* Present the renderer */
 		SDL_RenderPresent(instance.renderer);
@@ -313,6 +312,7 @@ int main(void)
 
 	freeTexture(&objectTexture);
 	freeTexture(&miniTexture);
+	free_wallTexture(&wall1Texture);
 	cleanup(&instance);
 
 	return (0);

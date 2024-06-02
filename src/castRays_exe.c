@@ -38,7 +38,7 @@ int truncateDivisionFloat(float value, float divisor)
  * the player's field of view and render the environment accordingly.
  */
 
-void castRays(SDL_Instance *instance, float playerX, float playerY, float playerRotation, bool isMiniMap)
+void castRays(SDL_Instance *instance, float playerX, float playerY, float playerRotation, bool isMiniMap, wallTexture *wallTexture)
 {
 	float scale = isMiniMap ? MINIMAP_SCALE : 1.0f;
 	float rayAngle;
@@ -77,8 +77,14 @@ void castRays(SDL_Instance *instance, float playerX, float playerY, float player
 			correctedDistance = rayDistance * cos(DEG_TO_RAD(rayAngle - playerRotation));
 			wallHeight = (int)((TILE_SIZE / correctedDistance) * DIST_TO_PROJ_PLANE);
 
+			// Calculate texture X coordinate
+            float wallX = (playerY + rayDistance * sin(DEG_TO_RAD(rayAngle))) / TILE_SIZE;
+            int texX = (int)(wallX * (float)wallTexture->width) % wallTexture->width;
+
+            drawWallTexture(instance->renderer, ray, wallHeight, wallTexture, texX);
+
 			/* Draw the wall slice */
-			drawWallSlice(instance->renderer, ray, wallHeight);
+			//drawWallSlice(instance->renderer, ray, wallHeight);
 		}
 	}
 }
@@ -254,4 +260,24 @@ void drawWallSlice(SDL_Renderer *renderer, int rayIndex, int wallHeight)
 
 	SDL_SetRenderDrawColor(renderer, 255, 253, 208, 255);
 	SDL_RenderDrawLine(renderer, rayIndex, wallTop, rayIndex, wallBottom);
+}
+
+void drawWallTexture(SDL_Renderer *renderer, int rayIndex, int wallHeight, wallTexture *texture, int texX)
+{
+    int drawStart = -wallHeight / 2 + SCREEN_HEIGHT / 2;
+    int drawEnd = wallHeight / 2 + SCREEN_HEIGHT / 2;
+
+    if (drawStart < 0)
+		drawStart = 0;
+    if (drawEnd >= SCREEN_HEIGHT)
+		drawEnd = SCREEN_HEIGHT - 1;
+
+    for (int y = drawStart; y < drawEnd; y++)
+	{
+        int d = y * 256 - SCREEN_HEIGHT * 128 + wallHeight * 128;
+        int texY = ((d * texture->height) / wallHeight) / 256;
+        Uint32 color = getTexturePixel(texture, texX, texY);
+        SDL_SetRenderDrawColor(renderer, (color & 0xFF0000) >> 16, (color & 0xFF00) >> 8, color & 0xFF, 0xFF);
+        SDL_RenderDrawPoint(renderer, rayIndex, y);
+    }
 }
