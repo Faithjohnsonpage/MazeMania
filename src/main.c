@@ -1,7 +1,7 @@
 #include "../headers/mazemania.h"
 
 int worldMap[mapHeight][mapWidth] = {
-	{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+	{1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1},
 	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
 	{1, 2, 2, 2, 2, 2, 0, 0, 0, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 1},
 	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
@@ -80,31 +80,34 @@ void render_world(SDL_Instance *instance, SDL_Rect *rect, bool isMinimap)
 	rect->w = TILE_SIZE * scale;
 	rect->h = TILE_SIZE * scale;
 
-	for (y = 0; y < mapHeight; y++)
+	if (isMinimap)
 	{
-		for (x = 0; x < mapWidth; x++)
+		for (y = 0; y < mapHeight; y++)
 		{
-			rect->x = x * TILE_SIZE * scale;
-			rect->y = y * TILE_SIZE * scale;
+			for (x = 0; x < mapWidth; x++)
+			{
+				rect->x = x * TILE_SIZE * scale;
+				rect->y = y * TILE_SIZE * scale;
 
-			if (worldMap[y][x] == 1) /* Brown (Fence) */
-			{
-				SDL_SetRenderDrawColor(instance->renderer, 139, 69, 19, 255);
-			}
-			else if (worldMap[y][x] == 0) /* Grey (Floor) */
-			{
-				SDL_SetRenderDrawColor(instance->renderer, 128, 128, 128, 255);
-			}
-			else if (worldMap[y][x] == 2) /* Green (Wall) */
-			{
-				SDL_SetRenderDrawColor(instance->renderer, 34, 139, 34, 255);
-			}
-			else if (worldMap[y][x] == 3) /* Cream (Additional elements) */
-			{
-				SDL_SetRenderDrawColor(instance->renderer, 255, 253, 208, 255);
-			}
+				if (worldMap[y][x] == 1)
+				{
+					SDL_SetRenderDrawColor(instance->renderer, 34, 139, 34, 255);
+				}
+				else if (worldMap[y][x] == 0)
+				{
+					SDL_SetRenderDrawColor(instance->renderer, 128, 128, 128, 255);
+				}
+				else if (worldMap[y][x] == 2)
+				{
+					SDL_SetRenderDrawColor(instance->renderer, 34, 139, 34, 255);
+				}
+				else if (worldMap[y][x] == 3)
+				{
+					SDL_SetRenderDrawColor(instance->renderer, 255, 253, 208, 255);
+				}
 
-			SDL_RenderFillRect(instance->renderer, rect);
+				SDL_RenderFillRect(instance->renderer, rect);
+			}
 		}
 	}
 }
@@ -130,31 +133,89 @@ void handleEvent(SDL_Event *event, SDL_Rect *object, Texture *texture,
 	SDL_Rect prevPosition = *object;
 	int y, x;
 
+	/* Define key states */
+	static bool keyW = false, keyS = false, keyA = false, keyD = false;
+
 	/* Handle keyboard input for movement */
-	if (event->type == SDL_KEYDOWN)
+	if (event->type == SDL_KEYDOWN || event->type == SDL_KEYUP)
 	{
+		bool isKeyDown = (event->type == SDL_KEYDOWN);
+
 		switch (event->key.keysym.sym)
 		{
-			case SDLK_UP:
-				object->y -= speed * deltaTime;
+			case SDLK_w:
+				keyW = isKeyDown;
 				break;
-			case SDLK_DOWN:
-				object->y += speed * deltaTime;
-				break;
-			case SDLK_LEFT:
-				object->x -= speed * deltaTime;
-				break;
-			case SDLK_RIGHT:
-				object->x += speed * deltaTime;
+			case SDLK_s:
+				keyS = isKeyDown;
 				break;
 			case SDLK_a:
-				*degrees -= 90 * deltaTime;
+				keyA = isKeyDown;
 				break;
 			case SDLK_d:
-				*degrees += 90 * deltaTime;
+				keyD = isKeyDown;
+				break;
+			case SDLK_LEFT:
+				if (isKeyDown)
+					*degrees -= 180 * deltaTime;
+				break;
+			case SDLK_RIGHT:
+				if (isKeyDown)
+					*degrees += 180 * deltaTime;
 				break;
 		}
 	}
+
+	/* Determine the resulting movement based on key states */
+	float moveX = 0, moveY = 0;
+
+	if ((keyW && keyS) || (keyA && keyD))
+	{
+		moveX = 0;
+		moveY = 0;
+	}
+	else
+	{
+		if (keyW && keyA)
+		{
+			moveY = -speed * deltaTime;
+			moveX = -speed * deltaTime;
+		}
+		else if (keyW && keyD)
+		{
+			moveY = -speed * deltaTime;
+			moveX = speed * deltaTime;
+		}
+		else if (keyA && keyS)
+		{
+			moveX = -speed * deltaTime;
+			moveY = speed * deltaTime;
+		}
+		else if (keyS && keyD)
+		{
+			moveX = speed * deltaTime;
+			moveY = speed * deltaTime;
+		}
+		else if (keyW && !keyS)
+		{
+			moveY = -speed * deltaTime;
+		}
+		else if (keyA && !keyD)
+		{
+			moveX = -speed * deltaTime;
+		}
+		else if (keyS && !keyW)
+		{
+			moveY = speed * deltaTime;
+		}
+		else if (keyD && !keyA)
+		{
+			moveX = speed * deltaTime;
+		}
+	}
+
+	object->x += moveX;
+	object->y += moveY;
 
 	if (object->x < TILE_SIZE)
 		object->x = TILE_SIZE;
@@ -281,14 +342,14 @@ int main(void)
 		SDL_SetRenderDrawColor(instance.renderer, 128, 128, 128, 255);
 		SDL_RenderClear(instance.renderer);
 
+		renderTopHalf(&instance);
+
 		/* Main game rendering */
 		render_world(&instance, &rect, false);
 
 		/* Render the moving object with rotation */
-		SDL_RenderCopyEx(instance.renderer, objectTexture.texture, NULL,
-				&object, degrees, NULL, SDL_FLIP_NONE);
-
-		SDL_RenderClear(instance.renderer);
+		//SDL_RenderCopyEx(instance.renderer, objectTexture.texture, NULL,
+		//&object, degrees, NULL, SDL_FLIP_NONE);
 
 		/* Cast rays for lighting effect for main map */
 		castRays(&instance, object.x, object.y, degrees, false, &wall1Texture);

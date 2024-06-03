@@ -64,6 +64,8 @@ typedef struct wallTexture
 int init_instance(SDL_Instance *instance);
 void initTexture(Texture *t);
 void freeTexture(Texture *t);
+void renderTopHalf(SDL_Instance *instance);
+void renderBottomHalf(SDL_Instance *instance);
 int loadTexture(SDL_Renderer *renderer, const char *path, Texture *texture, bool is_miniPlayer);
 void cleanup(SDL_Instance *instance);
 int checkIntersection(const SDL_Rect *A, const SDL_Rect *B);
@@ -71,10 +73,10 @@ void render_world(SDL_Instance *instance, SDL_Rect *rect, bool isMinimap);
 void handleEvent(SDL_Event *event, SDL_Rect *object, Texture *texture, float speed, double *degrees, float deltaTime);
 int truncateDivisionFloat(float value, float divisor);
 void castRays(SDL_Instance *instance, float playerX, float playerY, float playerRotation, bool isMiniMap, wallTexture *wallTexture);
-float castSingleRay(float playerX, float playerY, float rayAngle, float scale);
+void castSingleRay(float playerX, float playerY, float rayAngle, float scale,
+	SDL_Instance *instance, float playerRotation, bool isMiniMap, wallTexture *wallTexture, int ray);
 void drawRay(SDL_Renderer *renderer, float playerX, float playerY, float rayAngle, float rayDistance);
-void drawWallSlice(SDL_Renderer *renderer, int x, int wallHeight);
-void drawWallSlice(SDL_Renderer *renderer, int rayIndex, int wallHeight);
+void drawWallSlice(SDL_Renderer *renderer, int rayIndex, int wallHeight, int horizontalRay, int verticalRay);
 
 /* Handling wall texture */
 void init_wallTexture(wallTexture *t);

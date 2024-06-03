@@ -66,26 +66,7 @@ void castRays(SDL_Instance *instance, float playerX, float playerY, float player
 		}
 
 		/* Calculate the distance of the ray */
-		rayDistance = castSingleRay(playerX, playerY, rayAngle, scale);
-
-		if (isMiniMap)
-			drawRay(instance->renderer, playerX, playerY, rayAngle, rayDistance);
-
-		if (!isMiniMap)
-		{
-			/* Calculate the projected wall height */
-			correctedDistance = rayDistance * cos(DEG_TO_RAD(rayAngle - playerRotation));
-			wallHeight = (int)((TILE_SIZE / correctedDistance) * DIST_TO_PROJ_PLANE);
-
-			// Calculate texture X coordinate
-            float wallX = (playerY + rayDistance * sin(DEG_TO_RAD(rayAngle))) / TILE_SIZE;
-            int texX = (int)(wallX * (float)wallTexture->width) % wallTexture->width;
-
-            drawWallTexture(instance->renderer, ray, wallHeight, wallTexture, texX);
-
-			/* Draw the wall slice */
-			//drawWallSlice(instance->renderer, ray, wallHeight);
-		}
+		castSingleRay(playerX, playerY, rayAngle, scale, instance, playerRotation, isMiniMap, wallTexture, ray);
 	}
 }
 
@@ -104,7 +85,8 @@ void castRays(SDL_Instance *instance, float playerX, float playerY, float player
  * Return: The distance the ray travels before hitting an obstacle.
  */
 
-float castSingleRay(float playerX, float playerY, float rayAngle, float scale)
+void castSingleRay(float playerX, float playerY, float rayAngle, float scale,
+		SDL_Instance *instance, float playerRotation, bool isMiniMap, wallTexture *wallTexture, int ray) 
 {
 	/* Convert angle to radians for trigonometric functions */
 	float rayAngleRad = DEG_TO_RAD(rayAngle);
@@ -114,7 +96,7 @@ float castSingleRay(float playerX, float playerY, float rayAngle, float scale)
 	float horizontalHitX, horizontalHitY, verticalHitX, verticalHitY;
 	float horizontalDistance = INFINITY, verticalDistance = INFINITY;
 	int foundHorizontalWallHit = 0, foundVerticalWallHit = 0;
-	int gridX, gridY;
+	int gridX, gridY, wallHeight;
 
 	int isRayFacingDown = (rayAngle > 0 && rayAngle < 180);
 	int isRayFacingUp = !isRayFacingDown;
@@ -205,10 +187,53 @@ float castSingleRay(float playerX, float playerY, float rayAngle, float scale)
 		}
 	}
 
-	/* Return the shortest distance */
-	return (foundHorizontalWallHit && foundVerticalWallHit) ?
-		fmin(horizontalDistance, verticalDistance) :
-		(foundHorizontalWallHit ? horizontalDistance : verticalDistance);
+	/* Determine the shortest distance */
+	float rayDistance;
+	int verticalRay = 0, horizontalRay = 0;
+	if (foundHorizontalWallHit && foundVerticalWallHit)
+	{
+		if (horizontalDistance < verticalDistance)
+		{
+			rayDistance = horizontalDistance;
+			horizontalRay = 1;
+		}
+		else
+		{
+			rayDistance = verticalDistance;
+			verticalRay = 1;
+		}
+	}
+	else if (foundHorizontalWallHit)
+	{
+		rayDistance = horizontalDistance;
+		horizontalRay = 1;
+	}
+	else if (foundVerticalWallHit)
+	{
+		rayDistance = verticalDistance;
+		verticalRay = 1;
+	}
+
+	if (isMiniMap)
+	{
+		drawRay(instance->renderer, playerX, playerY, rayAngle, rayDistance);
+	}
+	else
+	{
+		/* Calculate the projected wall height */
+		float correctedDistance = rayDistance * cos(DEG_TO_RAD(rayAngle - playerRotation));
+		wallHeight = (int)((TILE_SIZE / correctedDistance) * DIST_TO_PROJ_PLANE);
+
+		/* Calculate texture X coordinate */
+		float wallX = (playerY + rayDistance * sin(DEG_TO_RAD(rayAngle))) / TILE_SIZE;
+		int texX = (int)(wallX * (float)wallTexture->width) % wallTexture->width;
+
+		/* Draw the wall slice */
+		//drawWallTexture(instance->renderer, ray, wallHeight, wallTexture, texX);
+
+		/* Draw the wall slice */
+		drawWallSlice(instance->renderer, ray, wallHeight, verticalRay, horizontalRay);
+	}	
 }
 
 /**
@@ -253,31 +278,39 @@ void drawRay(SDL_Renderer *renderer, float playerX, float playerY, float rayAngl
  * wall slice.
  */
 
-void drawWallSlice(SDL_Renderer *renderer, int rayIndex, int wallHeight)
+void drawWallSlice(SDL_Renderer *renderer, int rayIndex, int wallHeight, int horizontalRay, int verticalRay)
 {
 	int wallTop = (SCREEN_HEIGHT / 2) - (wallHeight / 2);
 	int wallBottom = (SCREEN_HEIGHT / 2) + (wallHeight / 2);
 
-	SDL_SetRenderDrawColor(renderer, 255, 253, 208, 255);
-	SDL_RenderDrawLine(renderer, rayIndex, wallTop, rayIndex, wallBottom);
+	if (horizontalRay)
+	{
+		SDL_SetRenderDrawColor(renderer, 64, 64, 64, 255);
+		SDL_RenderDrawLine(renderer, rayIndex, wallTop, rayIndex, wallBottom);
+	}
+	else if (verticalRay)
+	{
+		SDL_SetRenderDrawColor(renderer, 255, 253, 208, 255);
+		SDL_RenderDrawLine(renderer, rayIndex, wallTop, rayIndex, wallBottom);
+	}
 }
 
 void drawWallTexture(SDL_Renderer *renderer, int rayIndex, int wallHeight, wallTexture *texture, int texX)
 {
-    int drawStart = -wallHeight / 2 + SCREEN_HEIGHT / 2;
-    int drawEnd = wallHeight / 2 + SCREEN_HEIGHT / 2;
+	int drawStart = -wallHeight / 2 + SCREEN_HEIGHT / 2;
+	int drawEnd = wallHeight / 2 + SCREEN_HEIGHT / 2;
 
-    if (drawStart < 0)
+	if (drawStart < 0)
 		drawStart = 0;
-    if (drawEnd >= SCREEN_HEIGHT)
+	if (drawEnd >= SCREEN_HEIGHT)
 		drawEnd = SCREEN_HEIGHT - 1;
 
-    for (int y = drawStart; y < drawEnd; y++)
+	for (int y = drawStart; y < drawEnd; y++)
 	{
-        int d = y * 256 - SCREEN_HEIGHT * 128 + wallHeight * 128;
-        int texY = ((d * texture->height) / wallHeight) / 256;
-        Uint32 color = getTexturePixel(texture, texX, texY);
-        SDL_SetRenderDrawColor(renderer, (color & 0xFF0000) >> 16, (color & 0xFF00) >> 8, color & 0xFF, 0xFF);
-        SDL_RenderDrawPoint(renderer, rayIndex, y);
-    }
+		int d = y * 256 - SCREEN_HEIGHT * 128 + wallHeight * 128;
+		int texY = ((d * texture->height) / wallHeight) / 256;
+		Uint32 color = getTexturePixel(texture, texX, texY);
+		SDL_SetRenderDrawColor(renderer, (color & 0xFF0000) >> 16, (color & 0xFF00) >> 8, color & 0xFF, 0xFF);
+		SDL_RenderDrawPoint(renderer, rayIndex, y);
+	}
 }
