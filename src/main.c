@@ -128,7 +128,7 @@ void render_world(SDL_Instance *instance, SDL_Rect *rect, bool isMinimap)
  */
 
 void handleEvent(SDL_Event *event, SDL_Rect *object, Texture *texture,
-		float speed, double *degrees, float deltaTime)
+		float speed, double *degrees, float deltaTime, bool *isMinimap)
 {
 	SDL_Rect prevPosition = *object;
 	int y, x;
@@ -162,6 +162,14 @@ void handleEvent(SDL_Event *event, SDL_Rect *object, Texture *texture,
 			case SDLK_RIGHT:
 				if (isKeyDown)
 					*degrees += 180 * deltaTime;
+				break;
+			case SDLK_ESCAPE:
+				if (isKeyDown)
+					*isMinimap = !*isMinimap; /* Toggle mini-map state */
+				break;
+			case SDLK_RETURN:
+				if (isKeyDown)
+					*isMinimap = true;
 				break;
 		}
 	}
@@ -217,6 +225,7 @@ void handleEvent(SDL_Event *event, SDL_Rect *object, Texture *texture,
 	object->x += moveX;
 	object->y += moveY;
 
+	/* Boundary checks and sliding */
 	if (object->x < TILE_SIZE)
 		object->x = TILE_SIZE;
 
@@ -296,6 +305,7 @@ int main(void)
 	float speed = 200;
 	float deltaTime;
 	Uint32 lastFrameTime = SDL_GetTicks();
+	bool isMinimap = true;
 
 	initTexture(&objectTexture);
 	initTexture(&miniTexture);
@@ -331,7 +341,7 @@ int main(void)
 				running = 0;
 			}
 
-			handleEvent(&event, &object, &objectTexture, speed, &degrees, deltaTime);
+			handleEvent(&event, &object, &objectTexture, speed, &degrees, deltaTime, &isMinimap);
 
 			/* Update miniobject based on object position */
 			miniobject.x = object.x * MINIMAP_SCALE;
@@ -354,15 +364,18 @@ int main(void)
 		/* Cast rays for lighting effect for main map */
 		castRays(&instance, object.x, object.y, degrees, false, &wall1Texture);
 
-		/* Minimap rendering */
-		render_world(&instance, &rect, true);
+		if (isMinimap)
+		{
+			/* Minimap rendering */
+			render_world(&instance, &rect, true);
 
-		/* Render the moving miniobject with rotation */
-		SDL_RenderCopyEx(instance.renderer, miniTexture.texture, NULL,
-				&miniobject, degrees, NULL, SDL_FLIP_NONE);
+			/* Render the moving miniobject with rotation */
+			SDL_RenderCopyEx(instance.renderer, miniTexture.texture, NULL,
+					&miniobject, degrees, NULL, SDL_FLIP_NONE);
 
-		/* Cast rays for lighting effect in mini_map */
-		castRays(&instance, miniobject.x, miniobject.y, degrees, true, &wall1Texture);
+			/* Cast rays for lighting effect in mini_map */
+			castRays(&instance, miniobject.x, miniobject.y, degrees, true, &wall1Texture);
+		}
 
 		/* Present the renderer */
 		SDL_RenderPresent(instance.renderer);

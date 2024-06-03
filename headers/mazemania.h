@@ -70,7 +70,7 @@ int loadTexture(SDL_Renderer *renderer, const char *path, Texture *texture, bool
 void cleanup(SDL_Instance *instance);
 int checkIntersection(const SDL_Rect *A, const SDL_Rect *B);
 void render_world(SDL_Instance *instance, SDL_Rect *rect, bool isMinimap);
-void handleEvent(SDL_Event *event, SDL_Rect *object, Texture *texture, float speed, double *degrees, float deltaTime);
+void handleEvent(SDL_Event *event, SDL_Rect *object, Texture *texture, float speed, double *degrees, float deltaTime, bool *isMinimap);
 int truncateDivisionFloat(float value, float divisor);
 void castRays(SDL_Instance *instance, float playerX, float playerY, float playerRotation, bool isMiniMap, wallTexture *wallTexture);
 void castSingleRay(float playerX, float playerY, float rayAngle, float scale,
