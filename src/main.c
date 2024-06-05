@@ -1,20 +1,6 @@
 #include "../headers/mazemania.h"
 
-int worldMap[mapHeight][mapWidth] = {
-	{1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1},
-	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-	{1, 2, 2, 2, 2, 2, 0, 0, 0, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 1},
-	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 1},
-	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 1},
-	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 1},
-	{1, 0, 2, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 1},
-	{1, 0, 2, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-	{1, 0, 2, 2, 2, 2, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1},
-	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-	{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
-};
-
+int worldMap[mapHeight][mapWidth];
 
 /**
  * init_instance - Initializes the SDL instance, including the
@@ -296,7 +282,7 @@ int main(void)
 
 	SDL_Event event;
 	SDL_Rect rect;
-	SDL_Rect object = {480, 480, 0, 0};
+	SDL_Rect object = {80, 80, 0, 0};
 	SDL_Rect miniobject = {96, 96, 0, 0};
 	int running = 1;
 	double degrees = 0;
@@ -306,10 +292,19 @@ int main(void)
 	float deltaTime;
 	Uint32 lastFrameTime = SDL_GetTicks();
 	bool isMinimap = true;
+	LevelManager LevelManager;
+
+	if ((load_worlds_from_file()) != 0)
+	{
+		fprintf(stderr, "Could not complete loading the worlds");
+		return (1);
+	}
 
 	initTexture(&objectTexture);
 	initTexture(&miniTexture);
 	init_wallTexture(&wall1Texture);
+	init_LevelManager(&LevelManager);
+	loadCurrentLevel(&LevelManager);
 
 	if ((loadTexture(instance.renderer, "../images/dot.bmp", &objectTexture, false) != 0) ||
 			(loadTexture(instance.renderer, "../images/dot.bmp", &miniTexture, true) != 0) ||
@@ -382,11 +377,29 @@ int main(void)
 
 		/* Add a small delay to prevent high CPU usage */
 		SDL_Delay(16); /* Roughly 60 frames per second */
+
+		/* Check for level completion */
+		if (worldMap[object.y / TILE_SIZE][object.x / TILE_SIZE] == 3)
+		{
+			if (LevelManager.current_Level < 5)
+			{
+				LevelManager.current_Level++;
+				loadCurrentLevel(&LevelManager);
+				object.x = 80;
+				object.y = 80;
+			}
+			else
+			{
+				printf("You have completed all levels!\n");
+                running = false;
+			}
+		}
 	}
 
 	freeTexture(&objectTexture);
 	freeTexture(&miniTexture);
 	free_wallTexture(&wall1Texture);
+	free_LevelManager(&LevelManager);
 	cleanup(&instance);
 
 	return (0);

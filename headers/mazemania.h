@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <math.h>
+#include <errno.h>
 
 #define mapWidth 21
 #define mapHeight 12
@@ -19,6 +20,13 @@
 #define MINIMAP_SCALE 0.2f
 
 extern int worldMap[mapHeight][mapWidth];
+
+extern int worldMap1[mapHeight][mapWidth];
+extern int worldMap2[mapHeight][mapWidth];
+extern int worldMap3[mapHeight][mapWidth];
+extern int worldMap4[mapHeight][mapWidth];
+extern int worldMap5[mapHeight][mapWidth];
+extern int worldMap6[mapHeight][mapWidth];
 
 /**
  * struct SDL_Instance - SDL window and renderer structure.
@@ -61,6 +69,12 @@ typedef struct wallTexture
     Uint32 *pixels;
 } wallTexture;
 
+typedef struct LevelManager
+{
+	int **worldMap;
+	int current_Level;
+} LevelManager;
+
 int init_instance(SDL_Instance *instance);
 void initTexture(Texture *t);
 void freeTexture(Texture *t);
@@ -77,6 +91,14 @@ void castSingleRay(float playerX, float playerY, float rayAngle, float scale,
 	SDL_Instance *instance, float playerRotation, bool isMiniMap, wallTexture *wallTexture, int ray);
 void drawRay(SDL_Renderer *renderer, float playerX, float playerY, float rayAngle, float rayDistance);
 void drawWallSlice(SDL_Renderer *renderer, int rayIndex, int wallHeight, int horizontalRay, int verticalRay);
+
+/* Loading Worlds */
+int load_up_world(FILE *file, int worldMap[mapHeight][mapWidth]);
+int load_worlds_from_file(void);
+void loadCurrentLevel(LevelManager *levelManager);
+void free_LevelManager(LevelManager *levelManager);
+void init_LevelManager(LevelManager *levelManager);
+void nextLevel(LevelManager *levelManager);
 
 /* Handling wall texture */
 void init_wallTexture(wallTexture *t);
