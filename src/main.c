@@ -284,7 +284,7 @@ int main(void)
 	SDL_Rect rect;
 	SDL_Rect object = {80, 80, 0, 0};
 	SDL_Rect miniobject = {96, 96, 0, 0};
-	int running = 1;
+	int running = 1, level = 1;
 	double degrees = 0;
 	Texture objectTexture, miniTexture;
 	wallTexture wall1Texture;
@@ -293,6 +293,7 @@ int main(void)
 	Uint32 lastFrameTime = SDL_GetTicks();
 	bool isMinimap = true;
 	LevelManager LevelManager;
+	Enemy enemies[MAX_ENEMIES];
 
 	if ((load_worlds_from_file()) != 0)
 	{
@@ -305,6 +306,12 @@ int main(void)
 	init_wallTexture(&wall1Texture);
 	init_LevelManager(&LevelManager);
 	loadCurrentLevel(&LevelManager);
+
+	if (load_enemies(enemies, level, &instance) != 0)
+	{
+		fprintf(stderr, "Could not complete loading the enemies\n");
+		return (1);
+	}
 
 	if ((loadTexture(instance.renderer, "../images/dot.bmp", &objectTexture, false) != 0) ||
 			(loadTexture(instance.renderer, "../images/dot.bmp", &miniTexture, true) != 0) ||
@@ -352,6 +359,12 @@ int main(void)
 		/* Main game rendering */
 		render_world(&instance, &rect, false);
 
+		/* Render enemies */
+		/*for (int i = 0; i < 4 * level; i++)
+		{
+			renderEnemy(&instance, &enemies[i], object.x, object.y, degrees);
+		} */
+
 		/* Render the moving object with rotation */
 		//SDL_RenderCopyEx(instance.renderer, objectTexture.texture, NULL,
 		//&object, degrees, NULL, SDL_FLIP_NONE);
@@ -391,7 +404,7 @@ int main(void)
 			else
 			{
 				printf("You have completed all levels!\n");
-                running = false;
+				running = false;
 			}
 		}
 	}
@@ -400,6 +413,9 @@ int main(void)
 	freeTexture(&miniTexture);
 	free_wallTexture(&wall1Texture);
 	free_LevelManager(&LevelManager);
+	for (int i = 0; i < 4 * level; i++) {
+		freeTexture(enemies[i].texture);
+	}
 	cleanup(&instance);
 
 	return (0);

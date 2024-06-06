@@ -68,3 +68,26 @@ int loadTexture(SDL_Renderer *renderer, const char *path, Texture *texture,
 
 	return (0);
 }
+
+int load_EnemyTexture(SDL_Renderer *renderer, const char *file, SDL_Texture **texture, bool colorKey)
+{
+    SDL_Surface *surface = IMG_Load(file);
+    if (!surface) {
+        fprintf(stderr, "Could not load image: %s\n", SDL_GetError());
+        return -1;
+    }
+
+    if (colorKey) {
+        SDL_SetColorKey(surface, SDL_TRUE, SDL_MapRGB(surface->format, 255, 0, 255));
+    }
+
+    *texture = SDL_CreateTextureFromSurface(renderer, surface);
+    SDL_FreeSurface(surface);
+
+    if (!*texture)
+	{
+        fprintf(stderr, "Could not create texture: %s\n", SDL_GetError());
+    }
+
+    return 0;
+}

@@ -6,7 +6,8 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <math.h>
-#include <errno.h>
+#include <stdlib.h>
+#include <time.h>
 
 #define mapWidth 21
 #define mapHeight 12
@@ -18,6 +19,7 @@
 #define DEG_TO_RAD(angle) ((angle) * M_PI / 180.0)
 #define DIST_TO_PROJ_PLANE ((NUM_RAYS / 2) / tan(DEG_TO_RAD(FOV_ANGLE) / 2))
 #define MINIMAP_SCALE 0.2f
+#define MAX_ENEMIES 24
 
 extern int worldMap[mapHeight][mapWidth];
 
@@ -75,6 +77,14 @@ typedef struct LevelManager
 	int current_Level;
 } LevelManager;
 
+typedef struct Enemy {
+    SDL_Rect rect;
+	SDL_Texture *texture;
+    float speed;
+    int health;
+    float direction;
+} Enemy;
+
 int init_instance(SDL_Instance *instance);
 void initTexture(Texture *t);
 void freeTexture(Texture *t);
@@ -106,5 +116,12 @@ void free_wallTexture(wallTexture *t);
 Uint32 getTexturePixel(wallTexture *texture, int x, int y);
 int load_wallTexture(SDL_Renderer *renderer, const char *path, wallTexture *texture);
 void drawWallTexture(SDL_Renderer *renderer, int rayIndex, int wallHeight, wallTexture *texture, int texX);
+
+/* Handling enemies */
+void init_Enemy(Enemy *enemy, int x, int y, const char *texturePath, SDL_Renderer *renderer);
+void findSpawnPoints(int *spawnPointsX, int *spawnPointsY, int *numSpawnPoints);
+int load_enemies(Enemy *enemies, int level, SDL_Instance *instance);
+void renderEnemy(SDL_Instance *instance, Enemy *enemy, float playerX, float playerY, float playerRotation);
+int load_EnemyTexture(SDL_Renderer *renderer, const char *file, SDL_Texture **texture, bool colorKey);
 
 #endif /* MAZEMANIA_H_ */
