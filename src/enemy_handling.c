@@ -18,37 +18,10 @@ void init_Enemy(Enemy *enemy, int x, int y, const char *texturePath, SDL_Rendere
     }
 }
 
-void renderEnemy(SDL_Instance *instance, Enemy *enemy, float playerX, float playerY, float playerRotation) {
-    float enemyX = enemy->rect.x + enemy->rect.w / 2;
-    float enemyY = enemy->rect.y + enemy->rect.h / 2;
-
-    // Calculate distance and angle to enemy
-    float dx = enemyX - playerX;
-    float dy = enemyY - playerY;
-    float distance = hypot(dx, dy);
-
-    // Angle between player and enemy
-    float angleToEnemy = atan2(dy, dx) * 180 / M_PI;
-
-    // Correct angle based on player's rotation
-    float angleDifference = angleToEnemy - playerRotation;
-    if (angleDifference < -180) angleDifference += 360;
-    if (angleDifference > 180) angleDifference -= 360;
-
-    // Project enemy onto screen
-    float correctedDistance = distance * cos(DEG_TO_RAD(angleDifference));
-    int spriteHeight = (int)((TILE_SIZE / correctedDistance) * DIST_TO_PROJ_PLANE);
-    int spriteWidth = spriteHeight;
-
-    int spriteX = (int)((angleDifference + (FOV_ANGLE / 2)) * (SCREEN_WIDTH / FOV_ANGLE)) - (spriteWidth / 2);
-    int spriteY = (SCREEN_HEIGHT / 2) - (spriteHeight / 2);
-
-    SDL_Rect renderRect = {spriteX, spriteY, spriteWidth, spriteHeight};
-
-    // Render the enemy texture
-    SDL_RenderCopyEx(instance->renderer, enemy->texture, NULL, &renderRect, 0, NULL, SDL_FLIP_NONE);
+void renderEnemy(SDL_Instance *instance, Enemy *enemy)
+{
+    SDL_RenderCopyEx(instance->renderer, enemy->texture, NULL, &enemy->rect, 0, NULL, SDL_FLIP_NONE);
 }
-
 
 /*void updateEnemy(Enemy *enemy, float deltaTime) {
     // Example movement logic: move in the current direction

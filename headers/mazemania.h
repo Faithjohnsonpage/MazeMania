@@ -121,7 +121,7 @@ void drawWallTexture(SDL_Renderer *renderer, int rayIndex, int wallHeight, wallT
 void init_Enemy(Enemy *enemy, int x, int y, const char *texturePath, SDL_Renderer *renderer);
 void findSpawnPoints(int *spawnPointsX, int *spawnPointsY, int *numSpawnPoints);
 int load_enemies(Enemy *enemies, int level, SDL_Instance *instance);
-void renderEnemy(SDL_Instance *instance, Enemy *enemy, float playerX, float playerY, float playerRotation);
+void renderEnemy(SDL_Instance *instance, Enemy *enemy);
 int load_EnemyTexture(SDL_Renderer *renderer, const char *file, SDL_Texture **texture, bool colorKey);
 
 #endif /* MAZEMANIA_H_ */

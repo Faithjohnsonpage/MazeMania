@@ -360,11 +360,10 @@ int main(void)
 		render_world(&instance, &rect, false);
 
 		/* Render enemies */
-		/*for (int i = 0; i < 4 * level; i++)
-		{
-			renderEnemy(&instance, &enemies[i], object.x, object.y, degrees);
-		} */
-
+		for (int i = 0; i < 4 * level; i++) {
+            renderEnemy(&instance, &enemies[i]);
+        }
+		
 		/* Render the moving object with rotation */
 		//SDL_RenderCopyEx(instance.renderer, objectTexture.texture, NULL,
 		//&object, degrees, NULL, SDL_FLIP_NONE);
