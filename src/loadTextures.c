@@ -42,7 +42,7 @@ void freeTexture(Texture *t)
  * Return: 0 on success, 1 on failure.
  */
 int loadTexture(SDL_Renderer *renderer, const char *path, Texture *texture,
-				bool is_miniPlayer)
+		bool is_miniPlayer)
 {
 	float scale = is_miniPlayer ? MINIMAP_SCALE : 1.0f;
 	SDL_Surface *surface = IMG_Load(path);
@@ -69,25 +69,46 @@ int loadTexture(SDL_Renderer *renderer, const char *path, Texture *texture,
 	return (0);
 }
 
-int load_EnemyTexture(SDL_Renderer *renderer, const char *file, SDL_Texture **texture, bool colorKey)
+/**
+ * load_EnemyTexture - Loads an enemy texture from a file.
+ * @renderer: Pointer to the SDL_Renderer structure for rendering.
+ * @file: Path to the image file containing the texture.
+ * @texture: Pointer to the SDL_Texture pointer to store the loaded texture.
+ * @colorKey: Boolean indicating whether to use color keying for transparency.
+ *
+ * This function loads an enemy texture from the specified file using the
+ * provided renderer. If colorKey is true, it sets the color key for
+ * transparency. It stores the loaded texture in the pointer provided.
+ * Returns 0 on success, and non-zero on failure.
+ *
+ * Return: 0 on success, non-zero on failure.
+ */
+
+
+int load_EnemyTexture(SDL_Renderer *renderer, const char *file,
+		SDL_Texture **texture, bool colorKey)
 {
-    SDL_Surface *surface = IMG_Load(file);
-    if (!surface) {
-        fprintf(stderr, "Could not load image: %s\n", SDL_GetError());
-        return -1;
-    }
+	SDL_Surface *surface = IMG_Load(file);
 
-    if (colorKey) {
-        SDL_SetColorKey(surface, SDL_TRUE, SDL_MapRGB(surface->format, 255, 0, 255));
-    }
-
-    *texture = SDL_CreateTextureFromSurface(renderer, surface);
-    SDL_FreeSurface(surface);
-
-    if (!*texture)
+	if (!surface)
 	{
-        fprintf(stderr, "Could not create texture: %s\n", SDL_GetError());
-    }
+		fprintf(stderr, "Could not load image: %s\n", SDL_GetError());
+		return (-1);
+	}
 
-    return 0;
+	if (colorKey)
+	{
+		SDL_SetColorKey(surface, SDL_TRUE,
+				SDL_MapRGB(surface->format, 255, 0, 255));
+	}
+
+	*texture = SDL_CreateTextureFromSurface(renderer, surface);
+	SDL_FreeSurface(surface);
+
+	if (!*texture)
+	{
+		fprintf(stderr, "Could not create texture: %s\n", SDL_GetError());
+	}
+
+	return (0);
 }

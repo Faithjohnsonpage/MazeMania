@@ -77,19 +77,23 @@ void render_world(SDL_Instance *instance, SDL_Rect *rect, bool isMinimap)
 
 				if (worldMap[y][x] == 1)
 				{
-					SDL_SetRenderDrawColor(instance->renderer, 34, 139, 34, 255);
+					SDL_SetRenderDrawColor(instance->renderer, 34, 139, 34,
+							255);
 				}
 				else if (worldMap[y][x] == 0)
 				{
-					SDL_SetRenderDrawColor(instance->renderer, 128, 128, 128, 255);
+					SDL_SetRenderDrawColor(instance->renderer, 128, 128, 128,
+							255);
 				}
 				else if (worldMap[y][x] == 2)
 				{
-					SDL_SetRenderDrawColor(instance->renderer, 34, 139, 34, 255);
+					SDL_SetRenderDrawColor(instance->renderer, 34, 139, 34,
+							255);
 				}
 				else if (worldMap[y][x] == 3)
 				{
-					SDL_SetRenderDrawColor(instance->renderer, 255, 253, 208, 255);
+					SDL_SetRenderDrawColor(instance->renderer, 255, 253, 208,
+							255);
 				}
 
 				SDL_RenderFillRect(instance->renderer, rect);
@@ -106,6 +110,7 @@ void render_world(SDL_Instance *instance, SDL_Rect *rect, bool isMinimap)
  * @speed: Speed at which the object moves.
  * @degrees: Pointer to the angle in degrees to rotate the object.
  * @deltaTime: Time elapsed since the last frame.
+ * @isMinimap: Pointer to a boolean indicating if the minimap is enabled.
  *
  * This function processes SDL events such as keyboard input to move and
  * rotate the object within the game world. It updates the object's position
@@ -120,7 +125,7 @@ void handleEvent(SDL_Event *event, SDL_Rect *object, Texture *texture,
 	int y, x;
 
 	/* Define key states */
-	static bool keyW = false, keyS = false, keyA = false, keyD = false;
+	static bool keyW, keyS, keyA, keyD;
 
 	/* Handle keyboard input for movement */
 	if (event->type == SDL_KEYDOWN || event->type == SDL_KEYUP)
@@ -360,13 +365,14 @@ int main(void)
 		render_world(&instance, &rect, false);
 
 		/* Render enemies */
-		for (int i = 0; i < 4 * level; i++) {
-            renderEnemy(&instance, &enemies[i]);
-        }
-		
+		for (int i = 0; i < 4 * level; i++)
+		{
+			renderEnemy(&instance, &enemies[i]);
+		}
+
 		/* Render the moving object with rotation */
-		//SDL_RenderCopyEx(instance.renderer, objectTexture.texture, NULL,
-		//&object, degrees, NULL, SDL_FLIP_NONE);
+		/*SDL_RenderCopyEx(instance.renderer, objectTexture.texture, NULL,
+		  &object, degrees, NULL, SDL_FLIP_NONE);*/
 
 		/* Cast rays for lighting effect for main map */
 		castRays(&instance, object.x, object.y, degrees, false, &wall1Texture);
@@ -412,7 +418,8 @@ int main(void)
 	freeTexture(&miniTexture);
 	free_wallTexture(&wall1Texture);
 	free_LevelManager(&LevelManager);
-	for (int i = 0; i < 4 * level; i++) {
+	for (int i = 0; i < 4 * level; i++)
+	{
 		freeTexture(enemies[i].texture);
 	}
 	cleanup(&instance);

@@ -22,23 +22,25 @@ int truncateDivisionFloat(float value, float divisor)
 }
 
 /**
- * castRays - Casts multiple rays from the player's position
- * @instance: The SDL_Instance containing rendering and game state information
- * @playerX: The x-coordinate of the player's position
- * @playerY: The y-coordinate of the player's position
- * @playerRotation: The player's current rotation angle
- * @isMiniMap: Indicates whether the function is being called for a mini-map.
- * If true, the function performs operations specific to the mini-map.
- * If false, it performs the standard operations.
+ * castRays - Casts multiple rays from the player's position to simulate vision
+ * @instance: Pointer to an SDL_Instance containing rendering and game
+ * state information.
+ * @playerX: The x-coordinate of the player's position.
+ * @playerY: The y-coordinate of the player's position.
+ * @playerRotation: The current rotation angle of the player.
+ * @isMiniMap: Flag to determine if the casting is for a mini-map.
+ * @wallTexture: Pointer to the wall texture structure.
  *
- * This function casts multiple rays from the player's position in different
- * directions based on the player's rotation. It utilizes the SDL_Instance
- * to manage rendering and game state, and it calculates the distance each
- * ray travels before hitting an obstacle. The function is used to simulate
- * the player's field of view and render the environment accordingly.
+ * Description: This function casts multiple rays from the player’s
+ * current position in various directions based on the player's rotation.
+ * It utilizes the game's rendering context and state to determine the
+ * visibility and rendering of walls and obstacles within the player’s field
+ * of view. The function can be tailored to either the main game view or a
+ * mini-map, adjusting the fidelity and scale of raycasting accordingly.
  */
 
-void castRays(SDL_Instance *instance, float playerX, float playerY, float playerRotation, bool isMiniMap, wallTexture *wallTexture)
+void castRays(SDL_Instance *instance, float playerX, float playerY,
+		float playerRotation, bool isMiniMap, wallTexture *wallTexture)
 {
 	float scale = isMiniMap ? MINIMAP_SCALE : 1.0f;
 	float rayAngle;
@@ -66,27 +68,34 @@ void castRays(SDL_Instance *instance, float playerX, float playerY, float player
 		}
 
 		/* Calculate the distance of the ray */
-		castSingleRay(playerX, playerY, rayAngle, scale, instance, playerRotation, isMiniMap, wallTexture, ray);
+		castSingleRay(playerX, playerY, rayAngle, scale, instance,
+				playerRotation, isMiniMap, wallTexture, ray);
 	}
 }
 
 /**
- * castSingleRay - Casts a single ray and calculates its distance
- * @playerX: The x-coordinate of the player's position
- * @playerY: The y-coordinate of the player's position
- * @rayAngle: The angle at which the ray is cast
- * @scale: Specifies the scaling factor to be applied.
+ * castSingleRay - Casts a single ray to calculate the distance to an obstacle.
+ * @playerX: The x-coordinate of the player's starting position.
+ * @playerY: The y-coordinate of the player's starting position.
+ * @rayAngle: The angle at which the ray is cast, relative to the player.
+ * @scale: The scale factor for the ray, differentiating between main
+ * view and mini-map.
+ * @instance: Pointer to the SDL_Instance for rendering and state management.
+ * @playerRotation: The player's current rotation for correcting perspective.
+ * @isMiniMap: Flag to indicate mini-map calculation.
+ * @wallTexture: Pointer to the texture of the wall.
+ * @ray: The index of the current ray in the raycasting sequence.
  *
- * This function casts a single ray from the player's position at the specified
- * angle and calculates the distance the ray travels before hitting an obstacle
- * The function returns the distance from the player's position to the point of
- * intersection with the obstacle.
- *
- * Return: The distance the ray travels before hitting an obstacle.
+ * Description: Function performs the calculation of a single ray’s travel
+ * distance until it hits an obstacle. The calculation accounts for both
+ * vertical and horizontal distances, adjusting for perspective errors caused
+ * by the angle of incidence and player rotation. It supports both main and
+ * mini-map functionalities by adjusting the scale of measurements.
  */
 
 void castSingleRay(float playerX, float playerY, float rayAngle, float scale,
-		SDL_Instance *instance, float playerRotation, bool isMiniMap, wallTexture *wallTexture, int ray) 
+		SDL_Instance *instance, float playerRotation, bool isMiniMap,
+		wallTexture *wallTexture, int ray)
 {
 	/* Convert angle to radians for trigonometric functions */
 	float rayAngleRad = DEG_TO_RAD(rayAngle);
@@ -107,35 +116,44 @@ void castSingleRay(float playerX, float playerY, float rayAngle, float scale,
 	float ystep = TILE_SIZED;
 	float xstep = (TILE_SIZED) / tan(rayAngleRad);
 
-	float nextHorizontalTouchX, nextHorizontalTouchY, nextVerticalTouchX, nextVerticalTouchY;
+	float nextHorizontalTouchX, nextHorizontalTouchY, nextVerticalTouchX;
+	float nextVerticalTouchY;
 
 	if (isRayFacingDown)
 	{
-		nextHorizontalTouchY = truncateDivisionFloat(playerY, (TILE_SIZED)) * TILE_SIZED + TILE_SIZED;
-		nextHorizontalTouchX = playerX + (nextHorizontalTouchY - playerY) / tan(rayAngleRad);
+		nextHorizontalTouchY = truncateDivisionFloat(playerY, (TILE_SIZED)) *
+			TILE_SIZED + TILE_SIZED;
+		nextHorizontalTouchX = playerX + (nextHorizontalTouchY - playerY) /
+			tan(rayAngleRad);
 		ystep = TILE_SIZED;
 		xstep = TILE_SIZED / tan(rayAngleRad);
 	}
 	else
 	{
-		nextHorizontalTouchY = truncateDivisionFloat(playerY, TILE_SIZED) * TILE_SIZED - 1;
-		nextHorizontalTouchX = playerX + (nextHorizontalTouchY - playerY) / tan(rayAngleRad);
+		nextHorizontalTouchY = truncateDivisionFloat(playerY, TILE_SIZED) *
+			TILE_SIZED - 1;
+		nextHorizontalTouchX = playerX + (nextHorizontalTouchY - playerY) /
+			tan(rayAngleRad);
 		ystep = -TILE_SIZED;
 		xstep = -TILE_SIZED / tan(rayAngleRad);
 	}
 
-	while (nextHorizontalTouchX >= 0 && nextHorizontalTouchX < mapWidth * TILE_SIZED &&
-			nextHorizontalTouchY >= 0 && nextHorizontalTouchY < mapHeight * TILE_SIZED)
+	while (nextHorizontalTouchX >= 0 &&
+			nextHorizontalTouchX < mapWidth * TILE_SIZED &&
+			nextHorizontalTouchY >= 0 &&
+			nextHorizontalTouchY < mapHeight * TILE_SIZED)
 	{
 		gridX = truncateDivisionFloat(nextHorizontalTouchX, TILE_SIZED);
-		gridY = truncateDivisionFloat(nextHorizontalTouchY + (isRayFacingUp ? -1 : 0), TILE_SIZED);
+		gridY = truncateDivisionFloat(nextHorizontalTouchY +
+				(isRayFacingUp ? -1 : 0), TILE_SIZED);
 
-		if (gridX >= 0 && gridX < mapWidth && gridY >= 0 && gridY < mapHeight &&
-				worldMap[gridY][gridX] != 0)
+		if (gridX >= 0 && gridX < mapWidth && gridY >= 0 &&
+				gridY < mapHeight && worldMap[gridY][gridX] != 0)
 		{
 			horizontalHitX = nextHorizontalTouchX;
 			horizontalHitY = nextHorizontalTouchY;
-			horizontalDistance = hypot(horizontalHitX - playerX, horizontalHitY - playerY);
+			horizontalDistance = hypot(horizontalHitX - playerX,
+					horizontalHitY - playerY);
 			foundHorizontalWallHit = 1;
 			break;
 		}
@@ -152,31 +170,39 @@ void castSingleRay(float playerX, float playerY, float rayAngle, float scale,
 
 	if (isRayFacingRight)
 	{
-		nextVerticalTouchX = truncateDivisionFloat(playerX, TILE_SIZED) * TILE_SIZED + TILE_SIZED;
-		nextVerticalTouchY = playerY + (nextVerticalTouchX - playerX) * tan(rayAngleRad);
+		nextVerticalTouchX = truncateDivisionFloat(playerX, TILE_SIZED) *
+			TILE_SIZED + TILE_SIZED;
+		nextVerticalTouchY = playerY + (nextVerticalTouchX - playerX) *
+			tan(rayAngleRad);
 		xstep = TILE_SIZED;
 		ystep = TILE_SIZED * tan(rayAngleRad);
 	}
 	else
 	{
-		nextVerticalTouchX = truncateDivisionFloat(playerX, TILE_SIZED) * TILE_SIZED - 1;
-		nextVerticalTouchY = playerY + (nextVerticalTouchX - playerX) * tan(rayAngleRad);
+		nextVerticalTouchX = truncateDivisionFloat(playerX, TILE_SIZED) *
+			TILE_SIZED - 1;
+		nextVerticalTouchY = playerY + (nextVerticalTouchX - playerX) *
+			tan(rayAngleRad);
 		xstep = -TILE_SIZED;
 		ystep = -TILE_SIZED * tan(rayAngleRad);
 	}
 
-	while (nextVerticalTouchX >= 0 && nextVerticalTouchX < mapWidth * TILE_SIZED &&
-			nextVerticalTouchY >= 0 && nextVerticalTouchY < mapHeight * TILE_SIZED)
+	while (nextVerticalTouchX >= 0 &&
+			nextVerticalTouchX < mapWidth * TILE_SIZED &&
+			nextVerticalTouchY >= 0 &&
+			nextVerticalTouchY < mapHeight * TILE_SIZED)
 	{
-		gridX = truncateDivisionFloat(nextVerticalTouchX + (isRayFacingLeft ? -1 : 0), TILE_SIZED);
+		gridX = truncateDivisionFloat(nextVerticalTouchX +
+				(isRayFacingLeft ? -1 : 0), TILE_SIZED);
 		gridY = truncateDivisionFloat(nextVerticalTouchY, TILE_SIZED);
 
-		if (gridX >= 0 && gridX < mapWidth && gridY >= 0 && gridY < mapHeight &&
-				worldMap[gridY][gridX] != 0)
+		if (gridX >= 0 && gridX < mapWidth && gridY >= 0 &&
+				gridY < mapHeight && worldMap[gridY][gridX] != 0)
 		{
 			verticalHitX = nextVerticalTouchX;
 			verticalHitY = nextVerticalTouchY;
-			verticalDistance = hypot(verticalHitX - playerX, verticalHitY - playerY);
+			verticalDistance = hypot(verticalHitX - playerX,
+					verticalHitY - playerY);
 			foundVerticalWallHit = 1;
 			break;
 		}
@@ -190,6 +216,7 @@ void castSingleRay(float playerX, float playerY, float rayAngle, float scale,
 	/* Determine the shortest distance */
 	float rayDistance;
 	int verticalRay = 0, horizontalRay = 0;
+
 	if (foundHorizontalWallHit && foundVerticalWallHit)
 	{
 		if (horizontalDistance < verticalDistance)
@@ -221,96 +248,23 @@ void castSingleRay(float playerX, float playerY, float rayAngle, float scale,
 	else
 	{
 		/* Calculate the projected wall height */
-		float correctedDistance = rayDistance * cos(DEG_TO_RAD(rayAngle - playerRotation));
-		wallHeight = (int)((TILE_SIZE / correctedDistance) * DIST_TO_PROJ_PLANE);
+		float correctedDistance = rayDistance * cos(DEG_TO_RAD
+				(rayAngle - playerRotation));
+		wallHeight = (int)((TILE_SIZE / correctedDistance) *
+				DIST_TO_PROJ_PLANE);
 
 		/* Calculate texture X coordinate */
-		float wallX = (playerY + rayDistance * sin(DEG_TO_RAD(rayAngle))) / TILE_SIZE;
-		int texX = (int)(wallX * (float)wallTexture->width) % wallTexture->width;
+		float wallX = (playerY + rayDistance * sin(DEG_TO_RAD(rayAngle))) /
+			TILE_SIZE;
+		int texX = (int)(wallX * (float)wallTexture->width) %
+			wallTexture->width;
 
 		/* Draw the wall slice */
-		//drawWallTexture(instance->renderer, ray, wallHeight, wallTexture, texX);
+		drawWallTexture(instance->renderer, ray,
+				wallHeight, wallTexture, texX);
 
 		/* Draw the wall slice */
-		drawWallSlice(instance->renderer, ray, wallHeight, verticalRay, horizontalRay);
-	}	
-}
-
-/**
- * drawRay - Renders a ray on the screen from a player's position
- * @renderer: The SDL_Renderer to render the ray on
- * @playerX: The x-coordinate of the player's position
- * @playerY: The y-coordinate of the player's position
- * @rayAngle: The angle at which the ray is cast
- * @rayDistance: The distance the ray travels
- *
- * This function uses the SDL_Renderer to draw a ray originating from the
- * player's position, extending out at the specified angle and distance.
- * It calculates the end point of the ray based on the player's position,
- * the angle of the ray, and the distance the ray travels, then renders
- * a line from the player's position to the calculated end point.
- */
-
-void drawRay(SDL_Renderer *renderer, float playerX, float playerY, float rayAngle, float rayDistance)
-{
-	float rayAngleRad = DEG_TO_RAD(rayAngle);
-
-	/* Calculate the end point of the ray */
-	float rayEndX = playerX + cos(rayAngleRad) * rayDistance;
-	float rayEndY = playerY + sin(rayAngleRad) * rayDistance;
-
-	SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); /* Red color */
-
-	/* Draw the line representing the ray from the player to the end point */
-	SDL_RenderDrawLine(renderer, (int)playerX, (int)playerY, (int)rayEndX, (int)rayEndY);
-}
-
-/**
- * drawWallSlice - Draws a vertical wall slice in the renderer.
- * @renderer: The SDL renderer used to draw the wall slice.
- * @rayIndex: The index of the ray corresponding to the column being drawn.
- * @wallHeight: The height of the wall slice to be drawn.
- *
- * This function draws a vertical line representing a wall slice in a
- * raycasting engine. The slice is drawn at the position specified by the ray
- * index, with the given height. The top and bottom of the wall slice are
- * calculated based on the height of the screen and the height of the
- * wall slice.
- */
-
-void drawWallSlice(SDL_Renderer *renderer, int rayIndex, int wallHeight, int horizontalRay, int verticalRay)
-{
-	int wallTop = (SCREEN_HEIGHT / 2) - (wallHeight / 2);
-	int wallBottom = (SCREEN_HEIGHT / 2) + (wallHeight / 2);
-
-	if (horizontalRay)
-	{
-		SDL_SetRenderDrawColor(renderer, 64, 64, 64, 255);
-		SDL_RenderDrawLine(renderer, rayIndex, wallTop, rayIndex, wallBottom);
-	}
-	else if (verticalRay)
-	{
-		SDL_SetRenderDrawColor(renderer, 255, 253, 208, 255);
-		SDL_RenderDrawLine(renderer, rayIndex, wallTop, rayIndex, wallBottom);
-	}
-}
-
-void drawWallTexture(SDL_Renderer *renderer, int rayIndex, int wallHeight, wallTexture *texture, int texX)
-{
-	int drawStart = -wallHeight / 2 + SCREEN_HEIGHT / 2;
-	int drawEnd = wallHeight / 2 + SCREEN_HEIGHT / 2;
-
-	if (drawStart < 0)
-		drawStart = 0;
-	if (drawEnd >= SCREEN_HEIGHT)
-		drawEnd = SCREEN_HEIGHT - 1;
-
-	for (int y = drawStart; y < drawEnd; y++)
-	{
-		int d = y * 256 - SCREEN_HEIGHT * 128 + wallHeight * 128;
-		int texY = ((d * texture->height) / wallHeight) / 256;
-		Uint32 color = getTexturePixel(texture, texX, texY);
-		SDL_SetRenderDrawColor(renderer, (color & 0xFF0000) >> 16, (color & 0xFF00) >> 8, color & 0xFF, 0xFF);
-		SDL_RenderDrawPoint(renderer, rayIndex, y);
+		/*drawWallSlice(instance->renderer, ray, wallHeight,
+				verticalRay, horizontalRay);*/
 	}
 }

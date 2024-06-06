@@ -63,13 +63,41 @@ typedef struct SDL_Texture
 	int height;
 } Texture;
 
+/**
+ * struct wallTexture - Structure to store texture information for walls.
+ * @texture: SDL_Texture pointer that holds the actual texture data.
+ * @width: The width of the texture in pixels.
+ * @height: The height of the texture in pixels.
+ * @pixels: Pointer to the pixel data of the texture, typically used
+ * for direct pixel manipulation.
+ *
+ * Description: This structure holds all necessary information related
+ * to a wall's texture in a rendering context. It includes dimensions of
+ * the texture and pointers to the texture itself and its pixel data, allowing
+ * for detailed texture management and manipulation within the game or
+ * graphics application.
+ */
+
 typedef struct wallTexture
 {
-    SDL_Texture *texture;
-    int width;
-    int height;
-    Uint32 *pixels;
+	SDL_Texture *texture;
+	int width;
+	int height;
+	Uint32 *pixels;
 } wallTexture;
+
+/**
+ * struct LevelManager - Manages the levels and their corresponding
+ * maps in the game.
+ * @worldMap: Pointer to a dynamically allocated 2D array representing
+ * the map of the current level.
+ * @current_Level: The index of the currently active level in the game.
+ *
+ * Description: The LevelManager is responsible for handling and switching
+ * between different levels in a game. It stores the maps of levels as 2D
+ * arrays and tracks the current level being played, facilitating level
+ * transitions and map data retrieval.
+ */
 
 typedef struct LevelManager
 {
@@ -77,12 +105,29 @@ typedef struct LevelManager
 	int current_Level;
 } LevelManager;
 
-typedef struct Enemy {
-    SDL_Rect rect;
+/**
+ * struct Enemy - Represents an enemy character in the game.
+ * @rect: SDL_Rect structure defining the position and dimensions of the enemy.
+ * @texture: SDL_Texture pointer for the enemy's visual representation.
+ * @speed: Floating-point value representing the movement speed of the enemy.
+ * @health: Integer value representing the health points of the enemy.
+ * @direction: Floating-point value indicating the movement direction of the
+ * enemy in degrees.
+ *
+ * Description: This structure is used to manage the properties and behavior of
+ * enemy entities within the game. It includes their graphical representation,
+ * physical characteristics, and gameplay attributes such as speed, health, and
+ * direction of movement, essential for dynamic and interactive game
+ * environments.
+ */
+
+typedef struct Enemy
+{
+	SDL_Rect rect;
 	SDL_Texture *texture;
-    float speed;
-    int health;
-    float direction;
+	float speed;
+	int health;
+	float direction;
 } Enemy;
 
 int init_instance(SDL_Instance *instance);
@@ -90,17 +135,23 @@ void initTexture(Texture *t);
 void freeTexture(Texture *t);
 void renderTopHalf(SDL_Instance *instance);
 void renderBottomHalf(SDL_Instance *instance);
-int loadTexture(SDL_Renderer *renderer, const char *path, Texture *texture, bool is_miniPlayer);
+int loadTexture(SDL_Renderer *renderer, const char *path, Texture *texture,
+		bool is_miniPlayer);
 void cleanup(SDL_Instance *instance);
 int checkIntersection(const SDL_Rect *A, const SDL_Rect *B);
 void render_world(SDL_Instance *instance, SDL_Rect *rect, bool isMinimap);
-void handleEvent(SDL_Event *event, SDL_Rect *object, Texture *texture, float speed, double *degrees, float deltaTime, bool *isMinimap);
+void handleEvent(SDL_Event *event, SDL_Rect *object, Texture *texture,
+		float speed, double *degrees, float deltaTime, bool *isMinimap);
 int truncateDivisionFloat(float value, float divisor);
-void castRays(SDL_Instance *instance, float playerX, float playerY, float playerRotation, bool isMiniMap, wallTexture *wallTexture);
+void castRays(SDL_Instance *instance, float playerX, float playerY,
+		float playerRotation, bool isMiniMap, wallTexture *wallTexture);
 void castSingleRay(float playerX, float playerY, float rayAngle, float scale,
-	SDL_Instance *instance, float playerRotation, bool isMiniMap, wallTexture *wallTexture, int ray);
-void drawRay(SDL_Renderer *renderer, float playerX, float playerY, float rayAngle, float rayDistance);
-void drawWallSlice(SDL_Renderer *renderer, int rayIndex, int wallHeight, int horizontalRay, int verticalRay);
+		SDL_Instance *instance, float playerRotation, bool isMiniMap,
+		wallTexture *wallTexture, int ray);
+void drawRay(SDL_Renderer *renderer, float playerX, float playerY,
+		float rayAngle, float rayDistance);
+void drawWallSlice(SDL_Renderer *renderer, int rayIndex, int wallHeight,
+		int horizontalRay, int verticalRay);
 
 /* Loading Worlds */
 int load_up_world(FILE *file, int worldMap[mapHeight][mapWidth]);
@@ -114,14 +165,19 @@ void nextLevel(LevelManager *levelManager);
 void init_wallTexture(wallTexture *t);
 void free_wallTexture(wallTexture *t);
 Uint32 getTexturePixel(wallTexture *texture, int x, int y);
-int load_wallTexture(SDL_Renderer *renderer, const char *path, wallTexture *texture);
-void drawWallTexture(SDL_Renderer *renderer, int rayIndex, int wallHeight, wallTexture *texture, int texX);
+int load_wallTexture(SDL_Renderer *renderer, const char *path,
+		wallTexture *texture);
+void drawWallTexture(SDL_Renderer *renderer, int rayIndex, int wallHeight,
+		wallTexture *texture, int texX);
 
 /* Handling enemies */
-void init_Enemy(Enemy *enemy, int x, int y, const char *texturePath, SDL_Renderer *renderer);
-void findSpawnPoints(int *spawnPointsX, int *spawnPointsY, int *numSpawnPoints);
+void init_Enemy(Enemy *enemy, int x, int y, const char *texturePath,
+		SDL_Renderer *renderer);
+void findSpawnPoints(int *spawnPointsX, int *spawnPointsY,
+		int *numSpawnPoints);
 int load_enemies(Enemy *enemies, int level, SDL_Instance *instance);
 void renderEnemy(SDL_Instance *instance, Enemy *enemy);
-int load_EnemyTexture(SDL_Renderer *renderer, const char *file, SDL_Texture **texture, bool colorKey);
+int load_EnemyTexture(SDL_Renderer *renderer, const char *file,
+		SDL_Texture **texture, bool colorKey);
 
 #endif /* MAZEMANIA_H_ */
