@@ -131,7 +131,7 @@ void castSingleRay(float playerX, float playerY, float rayAngle, float scale,
 	else
 	{
 		nextHorizontalTouchY = truncateDivisionFloat(playerY, TILE_SIZED) *
-			TILE_SIZED - 1;
+			TILE_SIZED;
 		nextHorizontalTouchX = playerX + (nextHorizontalTouchY - playerY) /
 			tan(rayAngleRad);
 		ystep = -TILE_SIZED;
@@ -180,7 +180,7 @@ void castSingleRay(float playerX, float playerY, float rayAngle, float scale,
 	else
 	{
 		nextVerticalTouchX = truncateDivisionFloat(playerX, TILE_SIZED) *
-			TILE_SIZED - 1;
+			TILE_SIZED;
 		nextVerticalTouchY = playerY + (nextVerticalTouchX - playerX) *
 			tan(rayAngleRad);
 		xstep = -TILE_SIZED;
