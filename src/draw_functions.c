@@ -82,25 +82,26 @@ void drawWallSlice(SDL_Renderer *renderer, int rayIndex, int wallHeight,
  * alignment appears continuous and accurate across multiple slices.
  */
 
-void drawWallTexture(SDL_Renderer *renderer, int rayIndex,
-		int wallHeight, wallTexture *texture, int texX)
+void drawWallTexture(SDL_Renderer *renderer, int rayIndex, int wallHeight,
+		wallTexture *texture, int texX)
 {
-	int drawStart = -wallHeight / 2 + SCREEN_HEIGHT / 2;
-	int drawEnd = wallHeight / 2 + SCREEN_HEIGHT / 2;
-
-	if (drawStart < 0)
-		drawStart = 0;
-	if (drawEnd >= SCREEN_HEIGHT)
-		drawEnd = SCREEN_HEIGHT - 1;
+	int drawStart = (SCREEN_HEIGHT / 2) - (wallHeight / 2);
+	int drawEnd = (SCREEN_HEIGHT / 2) + (wallHeight / 2);
+	if (drawStart < 0) drawStart = 0;
+	if (drawEnd >= SCREEN_HEIGHT) drawEnd = SCREEN_HEIGHT - 1;
 
 	for (int y = drawStart; y < drawEnd; y++)
 	{
 		int d = y * 256 - SCREEN_HEIGHT * 128 + wallHeight * 128;
 		int texY = ((d * texture->height) / wallHeight) / 256;
-		Uint32 color = getTexturePixel(texture, texX, texY);
+		Uint32 color = texture->pixels[texY * texture->width + texX];
 
-		SDL_SetRenderDrawColor(renderer, (color & 0xFF0000) >> 16,
-				(color & 0xFF00) >> 8, color & 0xFF, 0xFF);
+		Uint8 r, g, b;
+		r = (color >> 16) & 0xFF;
+		g = (color >> 8) & 0xFF;
+		b = color & 0xFF;
+
+		SDL_SetRenderDrawColor(renderer, r, g, b, 255);
 		SDL_RenderDrawPoint(renderer, rayIndex, y);
 	}
 }

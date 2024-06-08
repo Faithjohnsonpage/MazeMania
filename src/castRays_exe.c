@@ -131,7 +131,7 @@ void castSingleRay(float playerX, float playerY, float rayAngle, float scale,
 	else
 	{
 		nextHorizontalTouchY = truncateDivisionFloat(playerY, TILE_SIZED) *
-			TILE_SIZED - 1;
+			TILE_SIZED;
 		nextHorizontalTouchX = playerX + (nextHorizontalTouchY - playerY) /
 			tan(rayAngleRad);
 		ystep = -TILE_SIZED;
@@ -180,7 +180,7 @@ void castSingleRay(float playerX, float playerY, float rayAngle, float scale,
 	else
 	{
 		nextVerticalTouchX = truncateDivisionFloat(playerX, TILE_SIZED) *
-			TILE_SIZED - 1;
+			TILE_SIZED;
 		nextVerticalTouchY = playerY + (nextVerticalTouchX - playerX) *
 			tan(rayAngleRad);
 		xstep = -TILE_SIZED;
@@ -254,10 +254,14 @@ void castSingleRay(float playerX, float playerY, float rayAngle, float scale,
 				DIST_TO_PROJ_PLANE);
 
 		/* Calculate texture X coordinate */
-		float wallX = (playerY + rayDistance * sin(DEG_TO_RAD(rayAngle))) /
-			TILE_SIZE;
-		int texX = (int)(wallX * (float)wallTexture->width) %
-			wallTexture->width;
+		int texX;
+		if (verticalRay)
+			texX = ((int)verticalHitY % TILE_SIZE);
+		else
+			texX = ((int)horizontalHitX % TILE_SIZE);
+
+		/* Scale texX to the texture width */
+		texX = (texX * wallTexture->width) / TILE_SIZE;
 
 		/* Draw the wall slice */
 		drawWallTexture(instance->renderer, ray,
