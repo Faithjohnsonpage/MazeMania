@@ -31,9 +31,13 @@ void free_wallTexture(wallTexture *t)
 		SDL_DestroyTexture(t->texture);
 		t->texture = NULL;
 	}
+	if (t->pixels)
+	{
+		free(t->pixels);
+		t->pixels = NULL;
+	}
 	t->width = 0;
 	t->height = 0;
-	t->pixels = NULL;
 }
 
 /**
@@ -49,13 +53,14 @@ void free_wallTexture(wallTexture *t)
  * Return: 0 on success, non-zero on failure.
  */
 
-int load_wallTexture(SDL_Renderer *renderer, const char *path, wallTexture *texture)
+int load_wallTexture(SDL_Renderer *renderer, const char *path,
+		wallTexture *texture)
 {
 	SDL_Surface *loadedSurface = IMG_Load(path);
 	if (!loadedSurface)
 	{
 		printf("Failed to load texture: %s\n", IMG_GetError());
-		return 1;
+		return (1);
 	}
 
 	texture->texture = SDL_CreateTextureFromSurface(renderer, loadedSurface);
@@ -63,16 +68,23 @@ int load_wallTexture(SDL_Renderer *renderer, const char *path, wallTexture *text
 	{
 		printf("Failed to create texture: %s\n", SDL_GetError());
 		SDL_FreeSurface(loadedSurface);
-		return 1;
+		return (1);
 	}
 
 	texture->width = loadedSurface->w;
 	texture->height = loadedSurface->h;
 	texture->pixels = (Uint32 *)malloc(texture->width * texture->height *
 			sizeof(Uint32));
+	if (!texture->pixels)
+	{
+		printf("Failed to allocate memory for texture pixels\n");
+		SDL_DestroyTexture(texture->texture);
+		SDL_FreeSurface(loadedSurface);
+		return (1);
+	}
 	memcpy(texture->pixels, loadedSurface->pixels, texture->width *
 			texture->height * sizeof(Uint32));
 	SDL_FreeSurface(loadedSurface);
 
-	return 0;
+	return (0);
 }

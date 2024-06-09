@@ -164,7 +164,6 @@ void nextLevel(LevelManager *levelManager);
 /* Handling wall texture */
 void init_wallTexture(wallTexture *t);
 void free_wallTexture(wallTexture *t);
-Uint32 getTexturePixel(wallTexture *texture, int x, int y);
 int load_wallTexture(SDL_Renderer *renderer, const char *path,
 		wallTexture *texture);
 void drawWallTexture(SDL_Renderer *renderer, int rayIndex, int wallHeight,
