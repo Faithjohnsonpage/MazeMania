@@ -148,7 +148,8 @@ void castSingleRay(float playerX, float playerY, float rayAngle, float scale,
 				(isRayFacingUp ? -1 : 0), TILE_SIZED);
 
 		if (gridX >= 0 && gridX < mapWidth && gridY >= 0 &&
-				gridY < mapHeight && worldMap[gridY][gridX] != 0)
+				gridY < mapHeight && (worldMap[gridY][gridX] == 1 ||
+					worldMap[gridY][gridX] == 2))
 		{
 			horizontalHitX = nextHorizontalTouchX;
 			horizontalHitY = nextHorizontalTouchY;
@@ -197,7 +198,8 @@ void castSingleRay(float playerX, float playerY, float rayAngle, float scale,
 		gridY = truncateDivisionFloat(nextVerticalTouchY, TILE_SIZED);
 
 		if (gridX >= 0 && gridX < mapWidth && gridY >= 0 &&
-				gridY < mapHeight && worldMap[gridY][gridX] != 0)
+				gridY < mapHeight && (worldMap[gridY][gridX] == 1 ||
+					worldMap[gridY][gridX] == 2))
 		{
 			verticalHitX = nextVerticalTouchX;
 			verticalHitY = nextVerticalTouchY;
@@ -269,6 +271,6 @@ void castSingleRay(float playerX, float playerY, float rayAngle, float scale,
 
 		/* Draw the wall slice */
 		/*drawWallSlice(instance->renderer, ray, wallHeight,
-				verticalRay, horizontalRay);*/
+		  verticalRay, horizontalRay);*/
 	}
 }

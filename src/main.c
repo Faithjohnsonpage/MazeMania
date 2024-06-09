@@ -216,18 +216,19 @@ void handleEvent(SDL_Event *event, SDL_Rect *object, Texture *texture,
 	object->x += moveX;
 	object->y += moveY;
 
-	/* Boundary checks and sliding */
-	if (object->x < TILE_SIZE)
-		object->x = TILE_SIZE;
+	/* Boundary checks. Added 10 pixels so that the player will go into open
+	space when the world is rendered with textures */
+	if (object->x < TILE_SIZE + 10)
+		object->x = TILE_SIZE + 10;
 
-	if ((object->x + texture->width) > SCREEN_WIDTH - TILE_SIZE)
-		object->x = SCREEN_WIDTH - TILE_SIZE - texture->width;
+	if ((object->x + texture->width) > SCREEN_WIDTH - TILE_SIZE - 10)
+		object->x = SCREEN_WIDTH - TILE_SIZE - 10 - texture->width;
 
-	if (object->y < TILE_SIZE)
-		object->y = TILE_SIZE;
+	if (object->y < TILE_SIZE + 10)
+		object->y = TILE_SIZE + 10;
 
-	if ((object->y + texture->height) > SCREEN_HEIGHT - TILE_SIZE)
-		object->y = SCREEN_HEIGHT - TILE_SIZE - texture->height;
+	if ((object->y + texture->height) > SCREEN_HEIGHT - TILE_SIZE - 10)
+		object->y = SCREEN_HEIGHT - TILE_SIZE - 10 - texture->height;
 
 	/* Check for collision with internal walls */
 	for (y = 0; y < mapHeight; y++)
@@ -320,7 +321,7 @@ int main(void)
 
 	if ((loadTexture(instance.renderer, "../images/dot.bmp", &objectTexture, false) != 0) ||
 			(loadTexture(instance.renderer, "../images/dot.bmp", &miniTexture, true) != 0) ||
-			(load_wallTexture(instance.renderer, "../images/wall5.png", &wall1Texture) != 0))
+			(load_wallTexture(instance.renderer, "../images/wall1.png", &wall1Texture) != 0))
 	{
 		printf("Failed to load wall texture.\n");
 		return (1);
@@ -365,10 +366,10 @@ int main(void)
 		render_world(&instance, &rect, false);
 
 		/* Render enemies */
-		for (int i = 0; i < 4 * level; i++)
+		/*for (int i = 0; i < 4 * level; i++)
 		{
 			renderEnemy(&instance, &enemies[i]);
-		}
+		}*/
 
 		/* Render the moving object with rotation */
 		/*SDL_RenderCopyEx(instance.renderer, objectTexture.texture, NULL,
