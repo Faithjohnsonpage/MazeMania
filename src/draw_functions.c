@@ -87,8 +87,10 @@ void drawWallTexture(SDL_Renderer *renderer, int rayIndex, int wallHeight,
 {
 	int drawStart = (SCREEN_HEIGHT / 2) - (wallHeight / 2);
 	int drawEnd = (SCREEN_HEIGHT / 2) + (wallHeight / 2);
-	if (drawStart < 0) drawStart = 0;
-	if (drawEnd >= SCREEN_HEIGHT) drawEnd = SCREEN_HEIGHT - 1;
+	if (drawStart < 0)
+		drawStart = 0;
+	if (drawEnd >= SCREEN_HEIGHT)
+		drawEnd = SCREEN_HEIGHT - 1;
 
 	for (int y = drawStart; y < drawEnd; y++)
 	{
@@ -103,5 +105,118 @@ void drawWallTexture(SDL_Renderer *renderer, int rayIndex, int wallHeight,
 
 		SDL_SetRenderDrawColor(renderer, r, g, b, 255);
 		SDL_RenderDrawPoint(renderer, rayIndex, y);
+	}
+}
+
+/**
+ * drawFloor - Renders the floor texture.
+ * @instance: Pointer to an SDL_Instance containing rendering and
+ * game state information.
+ * @playerX: The x-coordinate of the player's position.
+ * @playerY: The y-coordinate of the player's position.
+ * @playerRotation: The current rotation angle of the player.
+ * @floorTexture: Pointer to the floor texture structure.
+ */
+
+void drawFloor(SDL_Instance *instance, float playerX, float playerY,
+		float playerAngle, wallTexture *floorTexture)
+{
+	for (int y = SCREEN_HEIGHT / 2 + 1; y < SCREEN_HEIGHT; y++)
+	{
+		float rayDirX0 = cos(DEG_TO_RAD(playerAngle - FOV_ANGLE / 2));
+		float rayDirY0 = sin(DEG_TO_RAD(playerAngle - FOV_ANGLE / 2));
+		float rayDirX1 = cos(DEG_TO_RAD(playerAngle + FOV_ANGLE / 2));
+		float rayDirY1 = sin(DEG_TO_RAD(playerAngle + FOV_ANGLE / 2));
+
+		int p = y - SCREEN_HEIGHT / 2;
+		float posZ = 0.5 * SCREEN_HEIGHT;
+		float rowDistance = posZ / p;
+
+		float floorStepX = rowDistance * (rayDirX1 - rayDirX0) / SCREEN_WIDTH;
+		float floorStepY = rowDistance * (rayDirY1 - rayDirY0) / SCREEN_WIDTH;
+
+		float floorX = playerX + rowDistance * rayDirX0;
+		float floorY = playerY + rowDistance * rayDirY0;
+
+		for (int x = 0; x < SCREEN_WIDTH; x++) {
+			int cellX = (int)floorX;
+			int cellY = (int)floorY;
+
+			int tx = (int)(floorTexture->width *
+					(floorX - cellX)) & (floorTexture->width - 1);
+			int ty = (int)(floorTexture->height *
+					(floorY - cellY)) & (floorTexture->height - 1);
+
+			Uint32 floorColor = ((Uint32 *)floorTexture->pixels)[ty *
+				floorTexture->width + tx];
+
+			Uint8 r, g, b;
+			r = (floorColor >> 16) & 0xFF;
+			g = (floorColor >> 8) & 0xFF;
+			b = floorColor & 0xFF;
+
+			SDL_SetRenderDrawColor(instance->renderer, r, g, b, 255);
+			SDL_RenderDrawPoint(instance->renderer, x, y);
+
+			floorX += floorStepX;
+			floorY += floorStepY;
+		}
+	}
+}
+
+
+/**
+ * drawCeiling - Renders the ceiling texture.
+ * @instance: Pointer to an SDL_Instance containing rendering and
+ * game state information.
+ * @playerX: The x-coordinate of the player's position.
+ * @playerY: The y-coordinate of the player's position.
+ * @playerRotation: The current rotation angle of the player.
+ * @ceilingTexture: Pointer to the ceiling texture structure.
+ */
+
+void drawCeiling(SDL_Instance *instance, float playerX, float playerY,
+		float playerAngle, wallTexture *ceilingTexture)
+{
+	for (int y = 0; y < SCREEN_HEIGHT / 2; y++)
+	{
+		float rayDirX0 = cos(DEG_TO_RAD(playerAngle - FOV_ANGLE / 2));
+		float rayDirY0 = sin(DEG_TO_RAD(playerAngle - FOV_ANGLE / 2));
+		float rayDirX1 = cos(DEG_TO_RAD(playerAngle + FOV_ANGLE / 2));
+		float rayDirY1 = sin(DEG_TO_RAD(playerAngle + FOV_ANGLE / 2));
+
+		int p = SCREEN_HEIGHT / 2 - y;  /* Invert p for ceiling */
+		float posZ = 0.5 * SCREEN_HEIGHT;
+		float rowDistance = posZ / p;
+
+		float ceilingStepX = rowDistance * (rayDirX1 - rayDirX0) / SCREEN_WIDTH;
+		float ceilingStepY = rowDistance * (rayDirY1 - rayDirY0) / SCREEN_WIDTH;
+
+		float ceilingX = playerX + rowDistance * rayDirX0;
+		float ceilingY = playerY + rowDistance * rayDirY0;
+
+		for (int x = 0; x < SCREEN_WIDTH; x++) {
+			int cellX = (int)ceilingX;
+			int cellY = (int)ceilingY;
+
+			int tx = (int)(ceilingTexture->width *
+					(ceilingX - cellX)) & (ceilingTexture->width - 1);
+			int ty = (int)(ceilingTexture->height
+					* (ceilingY - cellY)) & (ceilingTexture->height - 1);
+
+			Uint32 ceilingColor = ((Uint32 *)ceilingTexture->pixels)[ty *
+				ceilingTexture->width + tx];
+
+			Uint8 r, g, b;
+			r = (ceilingColor >> 16) & 0xFF;
+			g = (ceilingColor >> 8) & 0xFF;
+			b = ceilingColor & 0xFF;
+
+			SDL_SetRenderDrawColor(instance->renderer, r, g, b, 255);
+			SDL_RenderDrawPoint(instance->renderer, x, y);
+
+			ceilingX += ceilingStepX;
+			ceilingY += ceilingStepY;
+		}
 	}
 }

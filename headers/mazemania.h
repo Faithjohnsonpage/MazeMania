@@ -168,6 +168,8 @@ int load_wallTexture(SDL_Renderer *renderer, const char *path,
 		wallTexture *texture);
 void drawWallTexture(SDL_Renderer *renderer, int rayIndex, int wallHeight,
 		wallTexture *texture, int texX);
+void drawFloor(SDL_Instance *instance, float playerX, float playerY, float playerRotation, wallTexture *floorTexture);
+void drawCeiling(SDL_Instance *instance, float playerX, float playerY, float playerRotation, wallTexture *ceilingTexture);
 
 /* Handling enemies */
 void init_Enemy(Enemy *enemy, int x, int y, const char *texturePath,

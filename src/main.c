@@ -217,7 +217,7 @@ void handleEvent(SDL_Event *event, SDL_Rect *object, Texture *texture,
 	object->y += moveY;
 
 	/* Boundary checks. Added 10 pixels so that the player will go into open
-	space when the world is rendered with textures */
+	   space when the world is rendered with textures */
 	if (object->x < TILE_SIZE + 10)
 		object->x = TILE_SIZE + 10;
 
@@ -293,7 +293,7 @@ int main(void)
 	int running = 1, level = 1;
 	double degrees = 0;
 	Texture objectTexture, miniTexture;
-	wallTexture wall1Texture;
+	wallTexture wall1Texture, floorTexture, ceilingTexture;
 	float speed = 200;
 	float deltaTime;
 	Uint32 lastFrameTime = SDL_GetTicks();
@@ -310,6 +310,8 @@ int main(void)
 	initTexture(&objectTexture);
 	initTexture(&miniTexture);
 	init_wallTexture(&wall1Texture);
+	init_wallTexture(&floorTexture);
+	init_wallTexture(&ceilingTexture);
 	init_LevelManager(&LevelManager);
 	loadCurrentLevel(&LevelManager);
 
@@ -321,7 +323,9 @@ int main(void)
 
 	if ((loadTexture(instance.renderer, "../images/dot.bmp", &objectTexture, false) != 0) ||
 			(loadTexture(instance.renderer, "../images/dot.bmp", &miniTexture, true) != 0) ||
-			(load_wallTexture(instance.renderer, "../images/wall1.png", &wall1Texture) != 0))
+			(load_wallTexture(instance.renderer, "../images/wall1.png", &wall1Texture) != 0) ||
+			(load_wallTexture(instance.renderer, "../images/floor_Tiles.png", &floorTexture) != 0) ||
+			(load_wallTexture(instance.renderer, "../images/wall1.png", &ceilingTexture) != 0))
 	{
 		printf("Failed to load wall texture.\n");
 		return (1);
@@ -362,14 +366,20 @@ int main(void)
 
 		renderTopHalf(&instance);
 
+		/* Render the ceiling */
+		drawCeiling(&instance, object.x, object.y, degrees, &ceilingTexture);
+
+		/* Render the floor */
+		drawFloor(&instance, object.x, object.y, degrees, &floorTexture);
+
 		/* Main game rendering */
 		render_world(&instance, &rect, false);
 
 		/* Render enemies */
 		/*for (int i = 0; i < 4 * level; i++)
-		{
-			renderEnemy(&instance, &enemies[i]);
-		}*/
+		  {
+		  renderEnemy(&instance, &enemies[i]);
+		  }*/
 
 		/* Render the moving object with rotation */
 		/*SDL_RenderCopyEx(instance.renderer, objectTexture.texture, NULL,
@@ -418,6 +428,8 @@ int main(void)
 	freeTexture(&objectTexture);
 	freeTexture(&miniTexture);
 	free_wallTexture(&wall1Texture);
+	free_wallTexture(&floorTexture);
+	free_wallTexture(&ceilingTexture);
 	free_LevelManager(&LevelManager);
 	for (int i = 0; i < 4 * level; i++)
 	{
