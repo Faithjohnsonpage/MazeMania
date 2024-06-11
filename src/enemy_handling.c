@@ -1,6 +1,19 @@
 #include "../headers/mazemania.h"
 
 /**
+ * depthBuffer - Array to store the corrected perpendicular distance for each
+ * ray cast in the rendering process.
+ *
+ * This buffer stores the corrected perpendicular distance (corrected for the
+ * fisheye effect) for each ray cast, corresponding to each vertical column on
+ * the screen. It ensures that closer objects are rendered in front of farther
+ * ones, aids in realistic scaling of objects based on their distance from the
+ * player, and enhances the 3D effect and rendering performance.
+ */
+
+float depthBuffer[SCREEN_WIDTH];
+
+/**
  * init_Enemy - Initializes an enemy with the specified parameters.
  * @enemy: Pointer to the Enemy structure to initialize.
  * @x: The x-coordinate of the enemy's position.
@@ -40,10 +53,48 @@ void init_Enemy(Enemy *enemy, int x, int y, const char *texturePath,
  * specified in the SDL_Instance structure.
  */
 
-void renderEnemy(SDL_Instance *instance, Enemy *enemy)
+void renderEnemies3D(SDL_Instance *instance, Enemy *enemies, int numEnemies,
+		float playerX, float playerY, float playerAngle)
 {
-	SDL_RenderCopyEx(instance->renderer, enemy->texture, NULL, &enemy->rect,
-			0, NULL, SDL_FLIP_NONE);
+    for (int i = 0; i < numEnemies; i++)
+    {
+        // Calculate the distance and angle of the enemy relative to the player
+        float dx = enemies[i].rect.x - playerX;
+        float dy = enemies[i].rect.y - playerY;
+        float distanceToEnemy = sqrtf(dx * dx + dy * dy);
+        float angleToEnemy = atan2f(dy, dx) - DEG_TO_RAD(playerAngle);
+
+        // Ensure the angle is within the player's field of view
+        if (angleToEnemy > M_PI)
+            angleToEnemy -= 2 * M_PI;
+        if (angleToEnemy < -M_PI)
+            angleToEnemy += 2 * M_PI;
+
+        // If the enemy is not within the FOV, skip rendering
+        if (fabs(angleToEnemy) > DEG_TO_RAD(FOV_ANGLE) / 2)
+            continue;
+
+        // Calculate the projected screen position of the enemy
+        float screenX = (SCREEN_WIDTH / 2) * (1 + tan(angleToEnemy) / tan(DEG_TO_RAD(FOV_ANGLE) / 2));
+        float screenY = (SCREEN_HEIGHT / 2);
+
+        // Calculate the height of the enemy on the screen
+        float enemyHeight = (TILE_SIZE / distanceToEnemy) * (SCREEN_WIDTH / (2 * tan(DEG_TO_RAD(FOV_ANGLE) / 2)));
+        float enemyWidth = enemyHeight;
+
+        // Only render if the enemy is in front of the player and within the depth buffer
+        if (distanceToEnemy > 0 && depthBuffer[(int)screenX] > distanceToEnemy)
+        {
+            SDL_Rect enemyRect;
+            enemyRect.x = screenX - enemyWidth / 2;
+            enemyRect.y = screenY - enemyHeight / 2;
+            enemyRect.w = enemyWidth;
+            enemyRect.h = enemyHeight;
+
+            // Render the enemy
+            SDL_RenderCopyEx(instance->renderer, enemies[i].texture, NULL, &enemyRect, 0, NULL, SDL_FLIP_NONE);
+        }
+    }
 }
 
 /**
@@ -98,7 +149,7 @@ int load_enemies(Enemy *enemies, int level, SDL_Instance *instance)
 
 	findSpawnPoints(spawnPointsX, spawnPointsY, &numSpawnPoints);
 
-	numEnemies = 4 * level;
+	numEnemies = 4 * level;	
 	if (numEnemies > numSpawnPoints)
 	{
 		fprintf(stderr, "Not enough spawn points for enemies.\n");
@@ -113,7 +164,7 @@ int load_enemies(Enemy *enemies, int level, SDL_Instance *instance)
 		index = rand() % numSpawnPoints;
 		init_Enemy(&enemies[i], spawnPointsX[index] * TILE_SIZE +
 				(TILE_SIZE / 3), spawnPointsY[index] * TILE_SIZE + (TILE_SIZE / 3),
-				"../images/darklord.png", instance->renderer);
+				"../images/Enemy2.png", instance->renderer);
 
 		/* Remove the selected spawn point */
 		for (j = index; j < numSpawnPoints - 1; j++)

@@ -290,7 +290,7 @@ int main(void)
 	SDL_Rect rect;
 	SDL_Rect object = {80, 80, 0, 0};
 	SDL_Rect miniobject = {96, 96, 0, 0};
-	int running = 1, level = 1;
+	int running = 1, level = 1, numEnemies, i;
 	double degrees = 0;
 	Texture objectTexture, miniTexture;
 	wallTexture wall1Texture, floorTexture, ceilingTexture;
@@ -353,7 +353,8 @@ int main(void)
 				running = 0;
 			}
 
-			handleEvent(&event, &object, &objectTexture, speed, &degrees, deltaTime, &isMinimap);
+			handleEvent(&event, &object, &objectTexture, speed, &degrees,
+					deltaTime, &isMinimap);
 
 			/* Update miniobject based on object position */
 			miniobject.x = object.x * MINIMAP_SCALE;
@@ -367,26 +368,30 @@ int main(void)
 		renderTopHalf(&instance);
 
 		/* Render the ceiling */
-		drawCeiling(&instance, object.x, object.y, degrees, &ceilingTexture);
+		if (level >= 5)
+		{
+			drawCeiling(&instance, object.x, object.y, degrees,
+					&ceilingTexture);
+		}
 
 		/* Render the floor */
-		drawFloor(&instance, object.x, object.y, degrees, &floorTexture);
+		if (level >= 3)
+			drawFloor(&instance, object.x, object.y, degrees, &floorTexture);
 
 		/* Main game rendering */
 		render_world(&instance, &rect, false);
-
-		/* Render enemies */
-		/*for (int i = 0; i < 4 * level; i++)
-		  {
-		  renderEnemy(&instance, &enemies[i]);
-		  }*/
 
 		/* Render the moving object with rotation */
 		/*SDL_RenderCopyEx(instance.renderer, objectTexture.texture, NULL,
 		  &object, degrees, NULL, SDL_FLIP_NONE);*/
 
 		/* Cast rays for lighting effect for main map */
-		castRays(&instance, object.x, object.y, degrees, false, &wall1Texture);
+		castRays(&instance, object.x, object.y, degrees, false,
+				&wall1Texture, level);
+
+		/* Render enemies */
+		numEnemies = 4 * level;
+		renderEnemies3D(&instance, enemies, numEnemies,object.x, object.y, degrees);
 
 		if (isMinimap)
 		{
@@ -398,7 +403,8 @@ int main(void)
 					&miniobject, degrees, NULL, SDL_FLIP_NONE);
 
 			/* Cast rays for lighting effect in mini_map */
-			castRays(&instance, miniobject.x, miniobject.y, degrees, true, &wall1Texture);
+			castRays(&instance, miniobject.x, miniobject.y, degrees, true,
+					&wall1Texture, level);
 		}
 
 		/* Present the renderer */
@@ -410,12 +416,23 @@ int main(void)
 		/* Check for level completion */
 		if (worldMap[object.y / TILE_SIZE][object.x / TILE_SIZE] == 3)
 		{
+			for (i = 0; i < 4 * level; i++)
+			{
+				freeTexture(enemies[i].texture);
+			}
+
 			if (LevelManager.current_Level < 5)
 			{
 				LevelManager.current_Level++;
+				level = LevelManager.current_Level + 1;
 				loadCurrentLevel(&LevelManager);
 				object.x = 80;
 				object.y = 80;
+				if (load_enemies(enemies, level, &instance) != 0)
+				{
+					fprintf(stderr, "Could not complete loading the enemies\n");
+					return (1);
+				}
 			}
 			else
 			{
@@ -431,10 +448,6 @@ int main(void)
 	free_wallTexture(&floorTexture);
 	free_wallTexture(&ceilingTexture);
 	free_LevelManager(&LevelManager);
-	for (int i = 0; i < 4 * level; i++)
-	{
-		freeTexture(enemies[i].texture);
-	}
 	cleanup(&instance);
 
 	return (0);

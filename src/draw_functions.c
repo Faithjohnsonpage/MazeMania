@@ -46,10 +46,11 @@ void drawRay(SDL_Renderer *renderer, float playerX, float playerY,
  */
 
 void drawWallSlice(SDL_Renderer *renderer, int rayIndex, int wallHeight,
-		int horizontalRay, int verticalRay)
+		int horizontalRay, int verticalRay, int level)
 {
 	int wallTop = (SCREEN_HEIGHT / 2) - (wallHeight / 2);
 	int wallBottom = (SCREEN_HEIGHT / 2) + (wallHeight / 2);
+
 
 	if (horizontalRay)
 	{

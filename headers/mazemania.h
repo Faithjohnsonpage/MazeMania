@@ -21,6 +21,8 @@
 #define MINIMAP_SCALE 0.2f
 #define MAX_ENEMIES 24
 
+extern float depthBuffer[SCREEN_WIDTH];
+
 extern int worldMap[mapHeight][mapWidth];
 
 extern int worldMap1[mapHeight][mapWidth];
@@ -144,14 +146,15 @@ void handleEvent(SDL_Event *event, SDL_Rect *object, Texture *texture,
 		float speed, double *degrees, float deltaTime, bool *isMinimap);
 int truncateDivisionFloat(float value, float divisor);
 void castRays(SDL_Instance *instance, float playerX, float playerY,
-		float playerRotation, bool isMiniMap, wallTexture *wallTexture);
+		float playerRotation, bool isMiniMap, wallTexture *wallTexture,
+		int level);
 void castSingleRay(float playerX, float playerY, float rayAngle, float scale,
 		SDL_Instance *instance, float playerRotation, bool isMiniMap,
-		wallTexture *wallTexture, int ray);
+		wallTexture *wallTexture, int ray, int level);
 void drawRay(SDL_Renderer *renderer, float playerX, float playerY,
 		float rayAngle, float rayDistance);
 void drawWallSlice(SDL_Renderer *renderer, int rayIndex, int wallHeight,
-		int horizontalRay, int verticalRay);
+		int horizontalRay, int verticalRay, int level);
 
 /* Loading Worlds */
 int load_up_world(FILE *file, int worldMap[mapHeight][mapWidth]);
@@ -168,8 +171,10 @@ int load_wallTexture(SDL_Renderer *renderer, const char *path,
 		wallTexture *texture);
 void drawWallTexture(SDL_Renderer *renderer, int rayIndex, int wallHeight,
 		wallTexture *texture, int texX);
-void drawFloor(SDL_Instance *instance, float playerX, float playerY, float playerRotation, wallTexture *floorTexture);
-void drawCeiling(SDL_Instance *instance, float playerX, float playerY, float playerRotation, wallTexture *ceilingTexture);
+void drawFloor(SDL_Instance *instance, float playerX, float playerY,
+		float playerRotation, wallTexture *floorTexture);
+void drawCeiling(SDL_Instance *instance, float playerX, float playerY,
+		float playerRotation, wallTexture *ceilingTexture);
 
 /* Handling enemies */
 void init_Enemy(Enemy *enemy, int x, int y, const char *texturePath,
@@ -177,7 +182,8 @@ void init_Enemy(Enemy *enemy, int x, int y, const char *texturePath,
 void findSpawnPoints(int *spawnPointsX, int *spawnPointsY,
 		int *numSpawnPoints);
 int load_enemies(Enemy *enemies, int level, SDL_Instance *instance);
-void renderEnemy(SDL_Instance *instance, Enemy *enemy);
+void renderEnemies3D(SDL_Instance *instance, Enemy *enemies, int numEnemies,
+		float playerX, float playerY, float playerAngle);
 int load_EnemyTexture(SDL_Renderer *renderer, const char *file,
 		SDL_Texture **texture, bool colorKey);
 

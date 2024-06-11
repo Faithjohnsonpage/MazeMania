@@ -40,7 +40,8 @@ int truncateDivisionFloat(float value, float divisor)
  */
 
 void castRays(SDL_Instance *instance, float playerX, float playerY,
-		float playerRotation, bool isMiniMap, wallTexture *wallTexture)
+		float playerRotation, bool isMiniMap, wallTexture *wallTexture,
+		int level)
 {
 	float scale = isMiniMap ? MINIMAP_SCALE : 1.0f;
 	float rayAngle;
@@ -69,7 +70,7 @@ void castRays(SDL_Instance *instance, float playerX, float playerY,
 
 		/* Calculate the distance of the ray */
 		castSingleRay(playerX, playerY, rayAngle, scale, instance,
-				playerRotation, isMiniMap, wallTexture, ray);
+				playerRotation, isMiniMap, wallTexture, ray, level);
 	}
 }
 
@@ -95,7 +96,7 @@ void castRays(SDL_Instance *instance, float playerX, float playerY,
 
 void castSingleRay(float playerX, float playerY, float rayAngle, float scale,
 		SDL_Instance *instance, float playerRotation, bool isMiniMap,
-		wallTexture *wallTexture, int ray)
+		wallTexture *wallTexture, int ray, int level)
 {
 	/* Convert angle to radians for trigonometric functions */
 	float rayAngleRad = DEG_TO_RAD(rayAngle);
@@ -255,6 +256,9 @@ void castSingleRay(float playerX, float playerY, float rayAngle, float scale,
 		wallHeight = (int)((TILE_SIZE / correctedDistance) *
 				DIST_TO_PROJ_PLANE);
 
+		/* Store the corrected perpendicular distance for the current ray */
+		depthBuffer[ray] = correctedDistance;
+
 		/* Calculate texture X coordinate */
 		int texX;
 		if (verticalRay)
@@ -265,12 +269,16 @@ void castSingleRay(float playerX, float playerY, float rayAngle, float scale,
 		/* Scale texX to the texture width */
 		texX = (texX * wallTexture->width) / TILE_SIZE;
 
-		/* Draw the wall slice */
-		drawWallTexture(instance->renderer, ray,
-				wallHeight, wallTexture, texX);
+		if (level == 1)
+		{
+			drawWallSlice(instance->renderer, ray, wallHeight,
+					verticalRay, horizontalRay, level);
+		}
+		else
+		{
+			drawWallTexture(instance->renderer, ray,
+					wallHeight, wallTexture, texX);
+		}
 
-		/* Draw the wall slice */
-		/*drawWallSlice(instance->renderer, ray, wallHeight,
-		  verticalRay, horizontalRay);*/
 	}
 }
