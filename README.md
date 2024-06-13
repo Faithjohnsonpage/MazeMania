@@ -35,7 +35,6 @@ Mazemania is a 3D maze exploration game built with SDL2. Navigate through increa
 ### Prerequisites
 
 - SDL2 library
-```
 
 #### Installing SDL2
 
