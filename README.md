@@ -40,7 +40,6 @@ Mazemania is a 3D maze exploration game built with SDL2. Navigate through increa
 
 You can also provide brief instructions on how to install SDL2. This could include package manager commands for different operating systems or a link to the SDL2 website for detailed installation instructions.
 
-```markdown
 ### Installing SDL2
 
 To install SDL2 library on macOS using Homebrew:
