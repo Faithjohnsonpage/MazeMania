@@ -30,6 +30,7 @@ int truncateDivisionFloat(float value, float divisor)
  * @playerRotation: The current rotation angle of the player.
  * @isMiniMap: Flag to determine if the casting is for a mini-map.
  * @wallTexture: Pointer to the wall texture structure.
+ * @level: The current level of the game.
  *
  * Description: This function casts multiple rays from the player’s
  * current position in various directions based on the player's rotation.
@@ -45,9 +46,8 @@ void castRays(SDL_Instance *instance, float playerX, float playerY,
 {
 	float scale = isMiniMap ? MINIMAP_SCALE : 1.0f;
 	float rayAngle;
-	float rayDistance, correctedDistance;
 	float angleIncrement = FOV_ANGLE / (float)(NUM_RAYS * scale);
-	int ray, wallHeight;
+	int ray;
 
 	/* Normalize the player's rotation angle to [0, 360) range */
 	playerRotation = fmod(playerRotation, 360);
@@ -86,6 +86,7 @@ void castRays(SDL_Instance *instance, float playerX, float playerY,
  * @isMiniMap: Flag to indicate mini-map calculation.
  * @wallTexture: Pointer to the texture of the wall.
  * @ray: The index of the current ray in the raycasting sequence.
+ * @level: The current level of the game.
  *
  * Description: Function performs the calculation of a single ray’s travel
  * distance until it hits an obstacle. The calculation accounts for both
@@ -217,7 +218,7 @@ void castSingleRay(float playerX, float playerY, float rayAngle, float scale,
 	}
 
 	/* Determine the shortest distance */
-	float rayDistance;
+	float rayDistance, correctedDistance;
 	int verticalRay = 0, horizontalRay = 0;
 
 	if (foundHorizontalWallHit && foundVerticalWallHit)
@@ -251,7 +252,7 @@ void castSingleRay(float playerX, float playerY, float rayAngle, float scale,
 	else
 	{
 		/* Calculate the projected wall height */
-		float correctedDistance = rayDistance * cos(DEG_TO_RAD
+		correctedDistance = rayDistance * cos(DEG_TO_RAD
 				(rayAngle - playerRotation));
 		wallHeight = (int)((TILE_SIZE / correctedDistance) *
 				DIST_TO_PROJ_PLANE);
@@ -261,6 +262,7 @@ void castSingleRay(float playerX, float playerY, float rayAngle, float scale,
 
 		/* Calculate texture X coordinate */
 		int texX;
+
 		if (verticalRay)
 			texX = ((int)verticalHitY % TILE_SIZE);
 		else
@@ -272,7 +274,7 @@ void castSingleRay(float playerX, float playerY, float rayAngle, float scale,
 		if (level == 1)
 		{
 			drawWallSlice(instance->renderer, ray, wallHeight,
-					verticalRay, horizontalRay, level);
+					verticalRay, horizontalRay);
 		}
 		else
 		{

@@ -2,6 +2,8 @@
 
 Mazemania is a 3D maze exploration game built with SDL2. Navigate through increasingly challenging levels filled with enemies, and utilize the mini-map for navigation. The game is designed to offer a retro, first-person perspective.
 
+![Screenshot](./images/screenshot.png)
+
 ## Features
 
 - **Levels and Worlds**: The game consists of multiple levels, each presenting a unique and progressively challenging maze. As you advance through the levels, the complexity and number of enemies increase.
@@ -33,6 +35,28 @@ Mazemania is a 3D maze exploration game built with SDL2. Navigate through increa
 ### Prerequisites
 
 - SDL2 library
+```
+
+#### Installing SDL2
+
+You can also provide brief instructions on how to install SDL2. This could include package manager commands for different operating systems or a link to the SDL2 website for detailed installation instructions.
+
+```markdown
+### Installing SDL2
+
+To install SDL2 library on macOS using Homebrew:
+
+```bash
+brew install sdl2
+```
+
+For Ubuntu or Debian-based Linux distributions:
+
+```bash
+sudo apt-get install libsdl2-dev
+```
+
+For Windows, download the SDL2 development libraries from the [official SDL website](https://www.libsdl.org/download-2.0.php) and follow the installation instructions.
 
 ### Building the Game
 
@@ -58,3 +82,7 @@ Mazemania is a 3D maze exploration game built with SDL2. Navigate through increa
 ## Contributing
 
 If you'd like to contribute to Mazemania, please fork the repository and use a feature branch. Pull requests are welcome.
+
+## License
+
+Mazemania is licensed under the MIT License.

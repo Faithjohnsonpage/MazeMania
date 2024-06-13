@@ -30,14 +30,14 @@ void free_wallTexture(wallTexture *t)
 	{
 		SDL_DestroyTexture(t->texture);
 		t->texture = NULL;
+		t->width = 0;
+		t->height = 0;
 	}
 	if (t->pixels)
 	{
 		free(t->pixels);
 		t->pixels = NULL;
 	}
-	t->width = 0;
-	t->height = 0;
 }
 
 /**
@@ -57,6 +57,7 @@ int load_wallTexture(SDL_Renderer *renderer, const char *path,
 		wallTexture *texture)
 {
 	SDL_Surface *loadedSurface = IMG_Load(path);
+
 	if (!loadedSurface)
 	{
 		printf("Failed to load texture: %s\n", IMG_GetError());

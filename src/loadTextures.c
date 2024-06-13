@@ -23,9 +23,9 @@ void freeTexture(Texture *t)
 	{
 		SDL_DestroyTexture(t->texture);
 		t->texture = NULL;
+		t->width = 0;
+		t->height = 0;
 	}
-	t->width = 0;
-	t->height = 0;
 }
 
 
@@ -41,6 +41,7 @@ void freeTexture(Texture *t)
  *
  * Return: 0 on success, 1 on failure.
  */
+
 int loadTexture(SDL_Renderer *renderer, const char *path, Texture *texture,
 		bool is_miniPlayer)
 {
@@ -93,7 +94,7 @@ int load_EnemyTexture(SDL_Renderer *renderer, const char *file,
 	if (!surface)
 	{
 		fprintf(stderr, "Could not load image: %s\n", SDL_GetError());
-		return (-1);
+		return (1);
 	}
 
 	if (colorKey)
@@ -108,6 +109,7 @@ int load_EnemyTexture(SDL_Renderer *renderer, const char *file,
 	if (!*texture)
 	{
 		fprintf(stderr, "Could not create texture: %s\n", SDL_GetError());
+		return (1);
 	}
 
 	return (0);

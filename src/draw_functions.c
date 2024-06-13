@@ -46,7 +46,7 @@ void drawRay(SDL_Renderer *renderer, float playerX, float playerY,
  */
 
 void drawWallSlice(SDL_Renderer *renderer, int rayIndex, int wallHeight,
-		int horizontalRay, int verticalRay, int level)
+		int horizontalRay, int verticalRay)
 {
 	int wallTop = (SCREEN_HEIGHT / 2) - (wallHeight / 2);
 	int wallBottom = (SCREEN_HEIGHT / 2) + (wallHeight / 2);
@@ -88,6 +88,7 @@ void drawWallTexture(SDL_Renderer *renderer, int rayIndex, int wallHeight,
 {
 	int drawStart = (SCREEN_HEIGHT / 2) - (wallHeight / 2);
 	int drawEnd = (SCREEN_HEIGHT / 2) + (wallHeight / 2);
+
 	if (drawStart < 0)
 		drawStart = 0;
 	if (drawEnd >= SCREEN_HEIGHT)
@@ -100,6 +101,7 @@ void drawWallTexture(SDL_Renderer *renderer, int rayIndex, int wallHeight,
 		Uint32 color = texture->pixels[texY * texture->width + texX];
 
 		Uint8 r, g, b;
+
 		r = (color >> 16) & 0xFF;
 		g = (color >> 8) & 0xFF;
 		b = color & 0xFF;
@@ -115,7 +117,7 @@ void drawWallTexture(SDL_Renderer *renderer, int rayIndex, int wallHeight,
  * game state information.
  * @playerX: The x-coordinate of the player's position.
  * @playerY: The y-coordinate of the player's position.
- * @playerRotation: The current rotation angle of the player.
+ * @playerAngle: The angle of the player's viewing direction.
  * @floorTexture: Pointer to the floor texture structure.
  */
 
@@ -132,17 +134,15 @@ void drawFloor(SDL_Instance *instance, float playerX, float playerY,
 		int p = y - SCREEN_HEIGHT / 2;
 		float posZ = 0.5 * SCREEN_HEIGHT;
 		float rowDistance = posZ / p;
-
 		float floorStepX = rowDistance * (rayDirX1 - rayDirX0) / SCREEN_WIDTH;
 		float floorStepY = rowDistance * (rayDirY1 - rayDirY0) / SCREEN_WIDTH;
-
 		float floorX = playerX + rowDistance * rayDirX0;
 		float floorY = playerY + rowDistance * rayDirY0;
 
-		for (int x = 0; x < SCREEN_WIDTH; x++) {
+		for (int x = 0; x < SCREEN_WIDTH; x++)
+		{
 			int cellX = (int)floorX;
 			int cellY = (int)floorY;
-
 			int tx = (int)(floorTexture->width *
 					(floorX - cellX)) & (floorTexture->width - 1);
 			int ty = (int)(floorTexture->height *
@@ -152,6 +152,7 @@ void drawFloor(SDL_Instance *instance, float playerX, float playerY,
 				floorTexture->width + tx];
 
 			Uint8 r, g, b;
+
 			r = (floorColor >> 16) & 0xFF;
 			g = (floorColor >> 8) & 0xFF;
 			b = floorColor & 0xFF;
@@ -172,7 +173,7 @@ void drawFloor(SDL_Instance *instance, float playerX, float playerY,
  * game state information.
  * @playerX: The x-coordinate of the player's position.
  * @playerY: The y-coordinate of the player's position.
- * @playerRotation: The current rotation angle of the player.
+ * @playerAngle: The angle of the player's viewing direction.
  * @ceilingTexture: Pointer to the ceiling texture structure.
  */
 
@@ -189,17 +190,15 @@ void drawCeiling(SDL_Instance *instance, float playerX, float playerY,
 		int p = SCREEN_HEIGHT / 2 - y;  /* Invert p for ceiling */
 		float posZ = 0.5 * SCREEN_HEIGHT;
 		float rowDistance = posZ / p;
-
 		float ceilingStepX = rowDistance * (rayDirX1 - rayDirX0) / SCREEN_WIDTH;
 		float ceilingStepY = rowDistance * (rayDirY1 - rayDirY0) / SCREEN_WIDTH;
-
 		float ceilingX = playerX + rowDistance * rayDirX0;
 		float ceilingY = playerY + rowDistance * rayDirY0;
 
-		for (int x = 0; x < SCREEN_WIDTH; x++) {
+		for (int x = 0; x < SCREEN_WIDTH; x++)
+		{
 			int cellX = (int)ceilingX;
 			int cellY = (int)ceilingY;
-
 			int tx = (int)(ceilingTexture->width *
 					(ceilingX - cellX)) & (ceilingTexture->width - 1);
 			int ty = (int)(ceilingTexture->height
@@ -209,6 +208,7 @@ void drawCeiling(SDL_Instance *instance, float playerX, float playerY,
 				ceilingTexture->width + tx];
 
 			Uint8 r, g, b;
+
 			r = (ceilingColor >> 16) & 0xFF;
 			g = (ceilingColor >> 8) & 0xFF;
 			b = ceilingColor & 0xFF;

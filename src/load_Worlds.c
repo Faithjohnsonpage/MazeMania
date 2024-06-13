@@ -51,7 +51,7 @@ int load_up_world(FILE *file, int worldMap[mapHeight][mapWidth])
  */
 
 int load_worlds_from_file(void)
-{	
+{
 	FILE *file = fopen("worlds.txt", "r");
 
 	if (file == NULL)
@@ -59,20 +59,36 @@ int load_worlds_from_file(void)
 		printf("Error opening file");
 		return (1);
 	}
-
 	if (load_up_world(file, worldMap1) != 0)
+	{
+		fclose(file);
 		return (1);
+	}
 	if (load_up_world(file, worldMap2) != 0)
+	{
+		fclose(file);
 		return (1);
+	}
 	if (load_up_world(file, worldMap3) != 0)
+	{
+		fclose(file);
 		return (1);
+	}
 	if (load_up_world(file, worldMap4) != 0)
+	{
+		fclose(file);
 		return (1);
+	}
 	if (load_up_world(file, worldMap5) != 0)
+	{
+		fclose(file);
 		return (1);
+	}
 	if (load_up_world(file, worldMap6) != 0)
+	{
+		fclose(file);
 		return (1);
-
+	}
 	fclose(file);
 
 	return (0);

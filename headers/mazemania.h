@@ -154,15 +154,15 @@ void castSingleRay(float playerX, float playerY, float rayAngle, float scale,
 void drawRay(SDL_Renderer *renderer, float playerX, float playerY,
 		float rayAngle, float rayDistance);
 void drawWallSlice(SDL_Renderer *renderer, int rayIndex, int wallHeight,
-		int horizontalRay, int verticalRay, int level);
+		int horizontalRay, int verticalRay);
 
 /* Loading Worlds */
 int load_up_world(FILE *file, int worldMap[mapHeight][mapWidth]);
 int load_worlds_from_file(void);
 void loadCurrentLevel(LevelManager *levelManager);
 void free_LevelManager(LevelManager *levelManager);
-void init_LevelManager(LevelManager *levelManager);
-void nextLevel(LevelManager *levelManager);
+int init_LevelManager(LevelManager *levelManager);
+int *getWorldMap(int index);
 
 /* Handling wall texture */
 void init_wallTexture(wallTexture *t);
@@ -177,7 +177,7 @@ void drawCeiling(SDL_Instance *instance, float playerX, float playerY,
 		float playerRotation, wallTexture *ceilingTexture);
 
 /* Handling enemies */
-void init_Enemy(Enemy *enemy, int x, int y, const char *texturePath,
+int init_Enemy(Enemy *enemy, int x, int y, const char *texturePath,
 		SDL_Renderer *renderer);
 void findSpawnPoints(int *spawnPointsX, int *spawnPointsY,
 		int *numSpawnPoints);

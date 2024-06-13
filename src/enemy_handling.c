@@ -10,8 +10,8 @@
  * ones, aids in realistic scaling of objects based on their distance from the
  * player, and enhances the 3D effect and rendering performance.
  */
-
 float depthBuffer[SCREEN_WIDTH];
+
 
 /**
  * init_Enemy - Initializes an enemy with the specified parameters.
@@ -21,12 +21,14 @@ float depthBuffer[SCREEN_WIDTH];
  * @texturePath: The path to the texture file for the enemy.
  * @renderer: Pointer to the SDL_Renderer structure for rendering.
  *
+ * Return: 0 on success else 1 on failure.
+ *
  * This function initializes an enemy with the specified position, size, speed,
  * health, and direction. It also loads the enemy texture from the specified
  * file path using the provided renderer.
  */
 
-void init_Enemy(Enemy *enemy, int x, int y, const char *texturePath,
+int init_Enemy(Enemy *enemy, int x, int y, const char *texturePath,
 		SDL_Renderer *renderer)
 {
 	enemy->rect.x = x;
@@ -41,60 +43,71 @@ void init_Enemy(Enemy *enemy, int x, int y, const char *texturePath,
 	if (load_EnemyTexture(renderer, texturePath, &enemy->texture, false) != 0)
 	{
 		fprintf(stderr, "Failed to load enemy texture: %s\n", texturePath);
+		return (1);
 	}
+
+	return (0);
 }
 
 /**
- * renderEnemy - Renders the enemy on the screen.
- * @instance: Pointer to the SDL_Instance structure with window and renderer.
- * @enemy: Pointer to the Enemy structure representing the enemy to render.
+ * renderEnemies3D - Renders enemies in a 3D perspective.
+ * @instance: Pointer to the SDL_Instance structure containing the renderer.
+ * @enemies: Pointer to an array of Enemy structures to be rendered.
+ * @numEnemies: The number of enemies in the array.
+ * @playerX: The x-coordinate of the player's position.
+ * @playerY: The y-coordinate of the player's position.
+ * @playerAngle: The angle of the player's view in degrees.
  *
- * This function renders the enemy on the screen using the SDL renderer
- * specified in the SDL_Instance structure.
+ * This function iterates through an array of Enemy structures and renders
+ * each enemy in a 3D perspective based on the player's position and viewing
+ * angle. It calculates the distance and angle to each enemy, adjusts their
+ * positions on the screen accordingly, and scales them based on their distance
+ * to create a 3D effect. Only enemies within the player's field of view and
+ * in front of the player are rendered.
  */
 
 void renderEnemies3D(SDL_Instance *instance, Enemy *enemies, int numEnemies,
 		float playerX, float playerY, float playerAngle)
 {
-    for (int i = 0; i < numEnemies; i++)
-    {
-        // Calculate the distance and angle of the enemy relative to the player
-        float dx = enemies[i].rect.x - playerX;
-        float dy = enemies[i].rect.y - playerY;
-        float distanceToEnemy = sqrtf(dx * dx + dy * dy);
-        float angleToEnemy = atan2f(dy, dx) - DEG_TO_RAD(playerAngle);
+	for (int i = 0; i < numEnemies; i++)
+	{
+		float dx = enemies[i].rect.x - playerX;
+		float dy = enemies[i].rect.y - playerY;
+		float distanceToEnemy = sqrtf(dx * dx + dy * dy);
+		float angleToEnemy = atan2f(dy, dx) - DEG_TO_RAD(playerAngle);
 
-        // Ensure the angle is within the player's field of view
-        if (angleToEnemy > M_PI)
-            angleToEnemy -= 2 * M_PI;
-        if (angleToEnemy < -M_PI)
-            angleToEnemy += 2 * M_PI;
+		/* Ensure the angle is within the player's field of view */
+		if (angleToEnemy > M_PI)
+			angleToEnemy -= 2 * M_PI;
+		if (angleToEnemy < -M_PI)
+			angleToEnemy += 2 * M_PI;
 
-        // If the enemy is not within the FOV, skip rendering
-        if (fabs(angleToEnemy) > DEG_TO_RAD(FOV_ANGLE) / 2)
-            continue;
+		/* If the enemy is not within the FOV, skip rendering */
+		if (fabs(angleToEnemy) > DEG_TO_RAD(FOV_ANGLE) / 2)
+			continue;
 
-        // Calculate the projected screen position of the enemy
-        float screenX = (SCREEN_WIDTH / 2) * (1 + tan(angleToEnemy) / tan(DEG_TO_RAD(FOV_ANGLE) / 2));
-        float screenY = (SCREEN_HEIGHT / 2);
+		/* Calculate the projected screen position of the enemy */
+		float screenX = (SCREEN_WIDTH / 2) * (1 + tan(angleToEnemy) /
+				tan(DEG_TO_RAD(FOV_ANGLE) / 2));
+		float screenY = (SCREEN_HEIGHT / 2);
 
-        // Calculate the height of the enemy on the screen
-        float enemyHeight = (TILE_SIZE / distanceToEnemy) * (SCREEN_WIDTH / (2 * tan(DEG_TO_RAD(FOV_ANGLE) / 2)));
-        float enemyWidth = enemyHeight;
+		/* Calculate the height of the enemy on the screen */
+		float enemyHeight = (TILE_SIZE / distanceToEnemy) * (SCREEN_WIDTH /
+				(2 * tan(DEG_TO_RAD(FOV_ANGLE) / 2)));
+		float enemyWidth = enemyHeight;
 
-        // Only render if the enemy is in front of the player and within the depth buffer
-        if (distanceToEnemy > 0 && depthBuffer[(int)screenX] > distanceToEnemy)
-        {
-            SDL_Rect enemyRect;
-            enemyRect.x = screenX - enemyWidth / 2;
-            enemyRect.y = screenY - enemyHeight / 2;
-            enemyRect.w = enemyWidth;
-            enemyRect.h = enemyHeight;
+		if (distanceToEnemy > 0 && depthBuffer[(int)screenX] > distanceToEnemy)
+		{
+			SDL_Rect enemyRect;
 
-            // Render the enemy
-            SDL_RenderCopyEx(instance->renderer, enemies[i].texture, NULL, &enemyRect, 0, NULL, SDL_FLIP_NONE);
-        }
-    }
+			enemyRect.x = screenX - enemyWidth / 2;
+			enemyRect.y = screenY - enemyHeight / 2;
+			enemyRect.w = enemyWidth;
+			enemyRect.h = enemyHeight;
+			SDL_RenderCopyEx(instance->renderer, enemies[i].texture, NULL,
+					&enemyRect, 0, NULL, SDL_FLIP_NONE);
+		}
+	}
 }
 
 /**
@@ -149,7 +162,7 @@ int load_enemies(Enemy *enemies, int level, SDL_Instance *instance)
 
 	findSpawnPoints(spawnPointsX, spawnPointsY, &numSpawnPoints);
 
-	numEnemies = 4 * level;	
+	numEnemies = 4 * level;
 	if (numEnemies > numSpawnPoints)
 	{
 		fprintf(stderr, "Not enough spawn points for enemies.\n");
@@ -162,9 +175,13 @@ int load_enemies(Enemy *enemies, int level, SDL_Instance *instance)
 	for (i = 0; i < numEnemies; i++)
 	{
 		index = rand() % numSpawnPoints;
-		init_Enemy(&enemies[i], spawnPointsX[index] * TILE_SIZE +
+		if ((init_Enemy(&enemies[i], spawnPointsX[index] * TILE_SIZE +
 				(TILE_SIZE / 3), spawnPointsY[index] * TILE_SIZE + (TILE_SIZE / 3),
-				"../images/Enemy2.png", instance->renderer);
+				"../images/Enemy2.png", instance->renderer)) != 0)
+		{
+			fprintf(stderr, "Could not completely initialize enemies.\n");
+			return (1);
+		}
 
 		/* Remove the selected spawn point */
 		for (j = index; j < numSpawnPoints - 1; j++)

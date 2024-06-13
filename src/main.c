@@ -24,6 +24,7 @@ int init_instance(SDL_Instance *instance)
 	if (instance->window == NULL)
 	{
 		fprintf(stderr, "SDL_CreateWindow Error: %s\n", SDL_GetError());
+		SDL_Quit();
 		return (1);
 	}
 
@@ -33,6 +34,8 @@ int init_instance(SDL_Instance *instance)
 	if (instance->renderer == NULL)
 	{
 		fprintf(stderr, "SDL_CreateRenderer Error: %s\n", SDL_GetError());
+		SDL_DestroyWindow(instance->window);
+		SDL_Quit();
 		return (1);
 	}
 
@@ -40,6 +43,9 @@ int init_instance(SDL_Instance *instance)
 	{
 		printf("SDL_image could not initialize! SDL_image Error: %s\n",
 				IMG_GetError());
+		SDL_DestroyRenderer(instance->renderer);
+		SDL_DestroyWindow(instance->window);
+		SDL_Quit();
 		return (1);
 	}
 
@@ -63,9 +69,9 @@ void render_world(SDL_Instance *instance, SDL_Rect *rect, bool isMinimap)
 {
 	float scale = isMinimap ? MINIMAP_SCALE : 1.0f;
 	int y, x;
+
 	rect->w = TILE_SIZE * scale;
 	rect->h = TILE_SIZE * scale;
-
 	if (isMinimap)
 	{
 		for (y = 0; y < mapHeight; y++)
@@ -216,8 +222,8 @@ void handleEvent(SDL_Event *event, SDL_Rect *object, Texture *texture,
 	object->x += moveX;
 	object->y += moveY;
 
-	/* Boundary checks. Added 10 pixels so that the player will go into open
-	   space when the world is rendered with textures */
+	/* Boundary checks. Added 10 pixels so that the player will go into open */
+	/* space when the world is rendered with textures */
 	if (object->x < TILE_SIZE + 10)
 		object->x = TILE_SIZE + 10;
 
@@ -268,6 +274,7 @@ void cleanup(SDL_Instance *instance)
 	{
 		SDL_DestroyWindow(instance->window);
 	}
+	IMG_Quit();
 	SDL_Quit();
 }
 
@@ -304,7 +311,8 @@ int main(void)
 	if ((load_worlds_from_file()) != 0)
 	{
 		fprintf(stderr, "Could not complete loading the worlds");
-		return (1);
+		cleanup(&instance);
+		exit(1);
 	}
 
 	initTexture(&objectTexture);
@@ -312,13 +320,20 @@ int main(void)
 	init_wallTexture(&wall1Texture);
 	init_wallTexture(&floorTexture);
 	init_wallTexture(&ceilingTexture);
-	init_LevelManager(&LevelManager);
+	if (init_LevelManager(&LevelManager) != 0)
+	{
+		fprintf(stderr, "Could not complete initializinfg the levels\n");
+		cleanup(&instance);
+		exit(1);
+	}
+
 	loadCurrentLevel(&LevelManager);
 
 	if (load_enemies(enemies, level, &instance) != 0)
 	{
 		fprintf(stderr, "Could not complete loading the enemies\n");
-		return (1);
+		cleanup(&instance);
+		exit(1);
 	}
 
 	if ((loadTexture(instance.renderer, "../images/dot.bmp", &objectTexture, false) != 0) ||
@@ -328,7 +343,8 @@ int main(void)
 			(load_wallTexture(instance.renderer, "../images/wall1.png", &ceilingTexture) != 0))
 	{
 		printf("Failed to load wall texture.\n");
-		return (1);
+		cleanup(&instance);
+		exit(1);
 	}
 
 
@@ -343,6 +359,7 @@ int main(void)
 	while (running)
 	{
 		Uint32 currentTime = SDL_GetTicks();
+
 		deltaTime = (currentTime - lastFrameTime) / 1000.0f;
 		lastFrameTime = currentTime;
 
@@ -381,18 +398,14 @@ int main(void)
 		/* Main game rendering */
 		render_world(&instance, &rect, false);
 
-		/* Render the moving object with rotation */
-		/*SDL_RenderCopyEx(instance.renderer, objectTexture.texture, NULL,
-		  &object, degrees, NULL, SDL_FLIP_NONE);*/
-
 		/* Cast rays for lighting effect for main map */
 		castRays(&instance, object.x, object.y, degrees, false,
 				&wall1Texture, level);
 
 		/* Render enemies */
 		numEnemies = 4 * level;
-		renderEnemies3D(&instance, enemies, numEnemies,object.x, object.y,
-						degrees);
+		renderEnemies3D(&instance, enemies, numEnemies, object.x, object.y,
+				degrees);
 
 		if (isMinimap)
 		{
@@ -433,7 +446,8 @@ int main(void)
 				if (load_enemies(enemies, level, &instance) != 0)
 				{
 					fprintf(stderr, "Could not complete loading the enemies\n");
-					return (1);
+					cleanup(&instance);
+					exit(1);
 				}
 			}
 			else
@@ -452,5 +466,5 @@ int main(void)
 	free_LevelManager(&LevelManager);
 	cleanup(&instance);
 
-	return (0);
+	exit(0);
 }
