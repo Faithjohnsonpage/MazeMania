@@ -404,8 +404,8 @@ int main(void)
 
 		/* Render enemies */
 		numEnemies = 4 * level;
-		renderEnemies3D(&instance, enemies, numEnemies, object.x, object.y,
-				degrees);
+		/*renderEnemies3D(&instance, enemies, numEnemies, object.x, object.y,
+				degrees);*/
 
 		if (isMinimap)
 		{
